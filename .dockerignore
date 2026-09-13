@@ -1,0 +1,8 @@
+node_modules
+.env
+.env.local
+whatsapp-session
+*.log
+.git
+.gitignore
+README.md

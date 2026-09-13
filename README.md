@@ -161,6 +161,63 @@ dans `WHATSAPP_SESSION_DIR` (par défaut `./whatsapp-session`, exclu du dépôt
 git) — pas besoin de rescanner à chaque redémarrage tant que ce dossier
 persiste.
 
+## Déploiement en production (Railway ou Render)
+
+**Pourquoi pas Vercel :** Vercel exécute des fonctions serverless sans état
+et sans disque persistant, incompatibles avec ce projet qui a besoin (1) d'une
+connexion WhatsApp permanente (Baileys garde un socket ouvert en continu),
+(2) d'une session WhatsApp persistée sur disque pour ne pas rescanner le QR
+code a chaque redemarrage, et (3) d'un job planifie qui tourne en continu
+(les relances). Railway et Render offrent tous les deux un process
+persistant + un disque persistant, ce qui correspond exactement au besoin.
+Un `Dockerfile`, `railway.json` et `render.yaml` sont deja fournis a la
+racine du projet.
+
+### Prérequis communs
+
+- Une base MongoDB accessible depuis internet — le plus simple est
+  [MongoDB Atlas](https://www.mongodb.com/atlas) (offre gratuite M0
+  suffisante pour demarrer).
+- Votre `ANTHROPIC_API_KEY`.
+- Votre numero WhatsApp au format international sans `+` (Guinee : `224` +
+  9 chiffres).
+
+### Option A — Railway
+
+1. Créez un projet sur [railway.app](https://railway.app), connectez ce
+   dépôt GitHub (branche à déployer).
+2. Railway détecte automatiquement le `Dockerfile` (config `railway.json`
+   fournie).
+3. Ajoutez un **volume** monté sur `/data/whatsapp-session` (Settings →
+   Volumes) — sinon la session WhatsApp est perdue à chaque redéploiement.
+4. Renseignez les variables d'environnement (`MONGODB_URI`,
+   `ANTHROPIC_API_KEY`, `JWT_SECRET`, `SEED_WHATSAPP_NUMBER`,
+   `WHATSAPP_SESSION_DIR=/data/whatsapp-session`, etc. — voir `.env.example`).
+5. Déployez, puis ouvrez les **logs** du service : le QR code s'y affiche en
+   texte. Scannez-le avec le WhatsApp du numéro configuré.
+6. Une fois connecté, lancez `npm run seed` via un shell Railway (`railway run npm run seed`) pour créer la boutique et le compte admin.
+
+### Option B — Render
+
+1. Sur [render.com](https://render.com), **New → Blueprint**, pointez vers
+   ce dépôt : `render.yaml` est détecté automatiquement (disque persistant
+   `/data/whatsapp-session` déjà déclaré).
+2. Render vous demandera de renseigner les variables marquées `sync: false`
+   dans `render.yaml` (`MONGODB_URI`, `ANTHROPIC_API_KEY`, `JWT_SECRET`,
+   `SEED_WHATSAPP_NUMBER`).
+3. Déployez, puis consultez les **logs** du service pour scanner le QR code.
+4. Lancez le seed une fois via le **Shell** intégré de Render :
+   `npm run seed`.
+
+### Après le premier déploiement
+
+- Le tableau de bord API est disponible sur `https://<votre-service>/api/*`
+  (voir `src/routes/`). Testez avec `POST /api/auth/login` (identifiants
+  créés par le seed).
+- `GET /health` sert de endpoint de health check pour la plateforme.
+- Tant que le disque/volume persiste, un redéploiement ne casse pas la
+  connexion WhatsApp (pas besoin de rescanner).
+
 ## Feuille de route
 
 - [ ] Tableau de bord front-end (React) au-dessus de l'API `/api/*`
