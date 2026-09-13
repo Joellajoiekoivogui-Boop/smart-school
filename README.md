@@ -127,18 +127,39 @@ scripts/seed.js              données de démonstration en GNF
 
 ## Installation
 
-```bash
-cp .env.example .env
-# renseigner ANTHROPIC_API_KEY, MONGODB_URI, JWT_SECRET
+Ce projet tourne sur votre propre machine ou serveur (Node.js + MongoDB) —
+il ne peut pas rester dans cette session cloud éphémère : le fichier `.env`
+et la session WhatsApp doivent vivre là où le processus reste actif.
 
+```bash
+git clone <url-du-depot>
+cd smart-school
+cp .env.example .env
+```
+
+Éditez `.env` :
+
+| Variable | À renseigner |
+|---|---|
+| `ANTHROPIC_API_KEY` | votre clé API Anthropic |
+| `MONGODB_URI` | une instance MongoDB accessible (locale ou Atlas) |
+| `SEED_WHATSAPP_NUMBER` | votre numéro WhatsApp, format international **sans** `+` (Guinée : préfixe `224` + les 9 chiffres, ex. `224XXXXXXXXX`) |
+| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | identifiants du compte admin du tableau de bord |
+
+Puis :
+
+```bash
 npm install
-npm run seed   # cree une boutique de demo + compte admin
+npm run seed   # cree la boutique (avec SEED_WHATSAPP_NUMBER), le catalogue de demo et le compte admin
 npm run dev
 ```
 
-Au démarrage, un QR code s'affiche dans le terminal : scannez-le avec le
-WhatsApp de l'entreprise (Réglages → Appareils liés) pour connecter l'agent
-au numéro existant.
+Un QR code s'affiche dans le terminal : scannez-le avec le WhatsApp
+correspondant à `SEED_WHATSAPP_NUMBER` (Réglages → Appareils liés) pour
+connecter l'agent à ce numéro. La session WhatsApp est ensuite conservée
+dans `WHATSAPP_SESSION_DIR` (par défaut `./whatsapp-session`, exclu du dépôt
+git) — pas besoin de rescanner à chaque redémarrage tant que ce dossier
+persiste.
 
 ## Feuille de route
 
