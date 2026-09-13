@@ -125,11 +125,36 @@ src/
 scripts/seed.js              données de démonstration en GNF
 ```
 
-## Installation
+## Lancer en local (sur votre ordinateur)
 
-Ce projet tourne sur votre propre machine ou serveur (Node.js + MongoDB) —
-il ne peut pas rester dans cette session cloud éphémère : le fichier `.env`
-et la session WhatsApp doivent vivre là où le processus reste actif.
+C'est le chemin le plus rapide pour tester l'agent sans créer de compte
+cloud. Il faut Node.js 18+ et une base MongoDB accessible.
+
+> ⚠️ **Ce n'est pas la même chose qu'un déploiement 24h/24.** L'agent ne
+> répond que tant que le processus tourne — si vous fermez le terminal ou
+> éteignez l'ordinateur, il s'arrête. Pour un canal commercial vraiment
+> disponible en continu, il faut soit laisser une machine allumée en
+> permanence, soit passer à un déploiement Railway/Render (voir plus bas)
+> une fois que vous avez validé que tout fonctionne en local.
+
+### 1. Prérequis
+
+- **Node.js 18+** : [nodejs.org](https://nodejs.org) (installeur pour
+  Windows/Mac, ou `nvm install 18` sur Linux/Mac).
+- **MongoDB** : le plus simple si vous avez déjà Docker installé :
+  ```bash
+  docker run -d --name mongo-agent -p 27017:27017 mongo:7
+  ```
+  Sans Docker : installez [MongoDB Community Server](https://www.mongodb.com/try/download/community)
+  (Windows/Mac/Linux), ou utilisez un cluster gratuit
+  [MongoDB Atlas](https://www.mongodb.com/atlas) si vous préférez ne rien
+  installer localement (nécessite un compte, mais aucune carte bancaire pour
+  l'offre gratuite M0).
+- Une clé API Anthropic sur [console.anthropic.com](https://console.anthropic.com)
+  (compte + facturation liés à vous — je ne peux pas la générer à votre
+  place).
+
+### 2. Cloner et configurer
 
 ```bash
 git clone <url-du-depot>
@@ -146,7 +171,7 @@ cp .env.example .env
 | `SEED_WHATSAPP_NUMBER` | votre numéro WhatsApp, format international **sans** `+` (Guinée : préfixe `224` + les 9 chiffres, ex. `224XXXXXXXXX`) |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | identifiants du compte admin du tableau de bord |
 
-Puis :
+### 3. Installer et lancer
 
 ```bash
 npm install
@@ -158,8 +183,17 @@ Un QR code s'affiche dans le terminal : scannez-le avec le WhatsApp
 correspondant à `SEED_WHATSAPP_NUMBER` (Réglages → Appareils liés) pour
 connecter l'agent à ce numéro. La session WhatsApp est ensuite conservée
 dans `WHATSAPP_SESSION_DIR` (par défaut `./whatsapp-session`, exclu du dépôt
-git) — pas besoin de rescanner à chaque redémarrage tant que ce dossier
-persiste.
+git) — pas besoin de rescanner tant que ce dossier persiste et que vous
+relancez `npm run dev` depuis le même endroit.
+
+### 4. Tester
+
+- Envoyez un message WhatsApp depuis un autre téléphone vers le numéro
+  connecté : l'agent doit répondre en utilisant le catalogue de démo créé
+  par le seed (`Smartphone Tecno Spark 20`, `Climatiseur split 1.5CV`, ...).
+- Tableau de bord API : `POST http://localhost:3000/api/auth/login` avec
+  `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` pour récupérer un token, puis
+  `GET /api/conversations`, `GET /api/leads`, etc. (voir `src/routes/`).
 
 ## Déploiement en production (Railway ou Render)
 
