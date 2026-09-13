@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.local
+auth/
+whatsapp-session/
+*.log
+.DS_Store
+dist/
+coverage/
