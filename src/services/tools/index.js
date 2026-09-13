@@ -1,8 +1,9 @@
 const catalogTools = require('./catalogTools');
 const leadTools = require('./leadTools');
 const memoryTools = require('./memoryTools');
+const webSearchTools = require('./webSearchTools');
 
-const allModules = [catalogTools, leadTools, memoryTools];
+const allModules = [catalogTools, leadTools, memoryTools, webSearchTools];
 
 const definitions = allModules.flatMap((m) => m.definitions);
 const executors = Object.assign({}, ...allModules.map((m) => m.executors));

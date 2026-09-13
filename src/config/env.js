@@ -12,8 +12,16 @@ module.exports = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   mongodbUri: required('MONGODB_URI', 'mongodb://localhost:27017/ai-sales-agent'),
+  agentProvider: process.env.AGENT_PROVIDER || 'openai', // 'openai' (Codex) ou 'claude'
+
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   agentModel: process.env.AGENT_MODEL || 'claude-sonnet-5',
+
+  openaiApiKey: process.env.OPENAI_API_KEY,
+  codexModel: process.env.CODEX_MODEL || 'gpt-4.1',
+
+  exaApiKey: process.env.EXA_API_KEY,
+
   jwtSecret: required('JWT_SECRET', 'dev-secret-change-me'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   whatsappSessionDir: process.env.WHATSAPP_SESSION_DIR || './whatsapp-session',

@@ -1,5 +1,5 @@
 const { Boutique, AgentSettings, Customer, Conversation, Message } = require('../models');
-const claudeAgent = require('./claudeAgent');
+const agent = require('./agent');
 
 /**
  * Point d'entree unique pour faire avancer une conversation d'un tour,
@@ -72,7 +72,7 @@ async function handleIncomingClientMessage({ boutiqueId, whatsappId, displayName
   }
 
   const context = await loadContext(boutiqueId, customer._id, conversation._id);
-  const result = await claudeAgent.respond(context, text);
+  const result = await agent.respond(context, text);
 
   if (result.reply) {
     await Message.create({
@@ -105,7 +105,7 @@ async function sendFollowup(conversationId, send) {
   const context = await loadContext(conversation.boutiqueId, conversation.customerId, conversation._id);
   if (!context.customer.agentActifPourCeClient) return { skipped: true };
 
-  const result = await claudeAgent.generateFollowup(context);
+  const result = await agent.generateFollowup(context);
   if (result.reply) {
     await Message.create({
       boutiqueId: conversation.boutiqueId,

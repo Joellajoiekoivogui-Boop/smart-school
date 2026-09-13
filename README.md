@@ -70,18 +70,22 @@ WhatsApp (numéro existant, Baileys)
 conversationService  ──────────────►  MongoDB (multi-tenant par boutique)
         │                                 Boutique, Product, Customer,
         ▼                                 Conversation, Message, Lead,
-   claudeAgent                            KnowledgeGap, Order, AgentSettings
-   (boucle d'appels Claude
-    avec tool-calling)
+     agent.js                             KnowledgeGap, Order, AgentSettings
+  (selectionne le moteur
+   via AGENT_PROVIDER)
+        │
+        ├── openaiAgent.js  (OpenAI/Codex, function calling)  ← par defaut
+        └── claudeAgent.js  (Claude, tool-calling + cache)
         │
         ▼
-   Outils de l'agent (src/services/tools)
+   Outils de l'agent (src/services/tools) — identiques pour les deux moteurs
    - search_catalog / get_product_details / check_active_promotions
    - qualify_lead
    - log_knowledge_gap
    - escalate_to_human
    - create_quote_or_order
    - remember_customer_fact
+   - search_web (Exa, seulement si peutRechercherSurInternet est autorise)
 
 followupJob (cron) ──► relances proactives via conversationService
 Tableau de bord API (src/routes) ──► contrôle humain (auth JWT)
@@ -98,14 +102,42 @@ architecture applicative (agent, outils, données) est réutilisable derrière
 l'API WhatsApp Business Cloud — seul `src/services/whatsapp/client.js`
 changerait.
 
-### Pourquoi Claude avec tool-calling plutôt qu'un chatbot à réponses fixes
+### Pourquoi un tool-calling plutôt qu'un chatbot à réponses fixes
 
 Le modèle ne répond jamais « de mémoire » sur un prix, un stock ou une
 promotion : il appelle systématiquement les outils connectés à MongoDB pour
 lire les données réelles avant de répondre (voir `src/prompts/salesAgentSystemPrompt.js`,
-règle absolue n°1). Le prompt système et les définitions d'outils sont mis
-en cache (`cache_control: ephemeral`) pour limiter le coût par message sur un
-usage WhatsApp à fort volume.
+règle absolue n°1). Ce comportement est indépendant du moteur choisi.
+
+### Deux moteurs interchangeables (`AGENT_PROVIDER`)
+
+`src/services/agent.js` sélectionne le moteur au démarrage selon la variable
+d'environnement `AGENT_PROVIDER` :
+
+| `AGENT_PROVIDER` | Fichier | Fournisseur | Variables requises |
+|---|---|---|---|
+| `openai` (par défaut) | `src/services/openaiAgent.js` | OpenAI / Codex, function calling via `chat.completions` | `OPENAI_API_KEY`, `CODEX_MODEL` |
+| `claude` | `src/services/claudeAgent.js` | Claude (Anthropic), tool-calling + prompt caching (`cache_control: ephemeral`) | `ANTHROPIC_API_KEY`, `AGENT_MODEL` |
+
+Les deux fichiers exposent exactement la même interface
+(`respond(context, texte)`, `generateFollowup(context)`) et partagent les
+mêmes outils (`src/services/tools/`) — basculer de l'un à l'autre ne
+touche à rien d'autre dans le projet.
+
+> ⚠️ **`CODEX_MODEL`** : vérifiez sur
+> [platform.openai.com/docs/models](https://platform.openai.com/docs/models)
+> le nom exact du modèle fourni par votre accès Codex avant de déployer —
+> les anciens modèles Codex (`code-davinci-002`, etc.) sont retirés de l'API.
+> `gpt-4.1` est laissé comme valeur de repli fonctionnelle.
+
+### Recherche web (Exa)
+
+L'outil `search_web` (`src/services/tools/webSearchTools.js`) interroge
+[Exa](https://exa.ai) quand le catalogue et la FAQ internes ne suffisent
+pas. Il vérifie toujours `AgentSettings.peutRechercherSurInternet` côté
+serveur avant d'appeler l'API — même si le modèle tente de l'utiliser sans
+autorisation, l'outil refuse et redirige vers `log_knowledge_gap` ou
+`escalate_to_human`. Renseignez `EXA_API_KEY` dans `.env` pour l'activer.
 
 ## Structure du projet
 
@@ -150,9 +182,14 @@ cloud. Il faut Node.js 18+ et une base MongoDB accessible.
   [MongoDB Atlas](https://www.mongodb.com/atlas) si vous préférez ne rien
   installer localement (nécessite un compte, mais aucune carte bancaire pour
   l'offre gratuite M0).
-- Une clé API Anthropic sur [console.anthropic.com](https://console.anthropic.com)
-  (compte + facturation liés à vous — je ne peux pas la générer à votre
-  place).
+- Une clé API pour le moteur choisi : `OPENAI_API_KEY` sur
+  [platform.openai.com](https://platform.openai.com) (par défaut,
+  `AGENT_PROVIDER=openai`), ou `ANTHROPIC_API_KEY` sur
+  [console.anthropic.com](https://console.anthropic.com) si vous passez
+  `AGENT_PROVIDER=claude` — liée à votre compte et votre facturation, je ne
+  peux pas la générer à votre place.
+- (Optionnel) `EXA_API_KEY` sur [exa.ai](https://exa.ai) pour activer la
+  recherche web de l'agent.
 
 ### 2. Cloner et configurer
 
@@ -166,7 +203,10 @@ cp .env.example .env
 
 | Variable | À renseigner |
 |---|---|
-| `ANTHROPIC_API_KEY` | votre clé API Anthropic |
+| `AGENT_PROVIDER` | `openai` (défaut, Codex) ou `claude` |
+| `OPENAI_API_KEY` / `CODEX_MODEL` | si `AGENT_PROVIDER=openai` — voir la mise en garde sur le nom du modèle plus haut |
+| `ANTHROPIC_API_KEY` / `AGENT_MODEL` | si `AGENT_PROVIDER=claude` |
+| `EXA_API_KEY` | optionnel — active l'outil `search_web` |
 | `MONGODB_URI` | une instance MongoDB accessible (locale ou Atlas) |
 | `SEED_WHATSAPP_NUMBER` | votre numéro WhatsApp, format international **sans** `+` (Guinée : préfixe `224` + les 9 chiffres, ex. `224XXXXXXXXX`) |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | identifiants du compte admin du tableau de bord |
@@ -256,8 +296,8 @@ racine du projet.
 
 - [ ] Tableau de bord front-end (React) au-dessus de l'API `/api/*`
       existante.
-- [ ] Recherche externe outillée (web) quand `peutRechercherSurInternet`
-      est activé, pour les questions hors catalogue.
+- [x] Recherche externe outillée (web, via Exa) quand
+      `peutRechercherSurInternet` est activé, pour les questions hors catalogue.
 - [ ] Intégration paiement Mobile Money (Orange Money / MTN MoMo) sur les
       commandes confirmées (`Order.paiement`).
 - [ ] Ingestion de documents commerciaux (FAQ, brochures) comme source
