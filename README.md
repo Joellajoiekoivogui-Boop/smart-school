@@ -291,11 +291,54 @@ racine du projet.
 - `GET /health` sert de endpoint de health check pour la plateforme.
 - Tant que le disque/volume persiste, un redéploiement ne casse pas la
   connexion WhatsApp (pas besoin de rescanner).
+- Notez l'URL publique du service (ex. `https://mon-agent.up.railway.app`) :
+  c'est elle qu'il faut renseigner dans `NEXT_PUBLIC_API_BASE_URL` pour le
+  tableau de bord (voir section suivante).
+
+## Tableau de bord (dashboard/, déployable sur Vercel)
+
+`dashboard/` est une application Next.js **séparée** du backend — elle ne
+fait qu'appeler l'API `/api/*` déjà exposée par le backend (Railway/Render).
+C'est le seul morceau du projet adapté à Vercel : pas de connexion WhatsApp
+permanente ni de cron à faire tourner ici, juste des pages React qui
+consomment une API distante.
+
+```
+dashboard/
+  app/login/page.jsx        formulaire de connexion (POST /api/auth/login)
+  app/dashboard/page.jsx     vue d'ensemble, conversations, leads, produits, parametres
+  lib/api.js                 client HTTP (JWT en localStorage, redirection si session expiree)
+```
+
+### Déployer sur Vercel
+
+1. Sur [vercel.com](https://vercel.com), **New Project**, importez ce dépôt
+   GitHub et réglez **Root Directory** sur `dashboard` (Vercel détecte
+   Next.js automatiquement — build/start commands par défaut).
+2. Ajoutez la variable d'environnement `NEXT_PUBLIC_API_BASE_URL` = l'URL
+   publique de votre backend (Railway/Render), **sans** slash final.
+3. Déployez. Le CORS est déjà ouvert côté backend (`app.use(cors())` dans
+   `src/app.js`) — aucune configuration supplémentaire n'est nécessaire.
+4. Connectez-vous avec les identifiants créés par `npm run seed`
+   (`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`).
+
+Sans backend public à interroger, le formulaire de connexion affiche un
+message clair au lieu d'échouer silencieusement — le dashboard peut donc
+être déployé avant même que le backend le soit.
+
+### Tester en local
+
+```bash
+cd dashboard
+cp .env.example .env.local   # NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
+npm install
+npm run dev
+```
 
 ## Feuille de route
 
-- [ ] Tableau de bord front-end (React) au-dessus de l'API `/api/*`
-      existante.
+- [x] Tableau de bord front-end (Next.js, `dashboard/`) au-dessus de l'API
+      `/api/*` existante — voir section dédiée ci-dessus.
 - [x] Recherche externe outillée (web, via Exa) quand
       `peutRechercherSurInternet` est activé, pour les questions hors catalogue.
 - [ ] Intégration paiement Mobile Money (Orange Money / MTN MoMo) sur les

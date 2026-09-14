@@ -1,0 +1,19 @@
+{
+  "name": "vigie-commerciale-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tableau de bord (Next.js) de l'agent commercial IA WhatsApp - deployable sur Vercel, connecte a l'API du backend.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^16.3.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
