@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci --prefix ecole && npm ci --omit=dev --ignore-scripts",
+  "buildCommand": "npm run build --prefix ecole",
+  "outputDirectory": "ecole/out",
+  "cleanUrls": true,
+  "functions": {
+    "api/assistant.js": { "maxDuration": 60 }
+  },
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" },
+        { "key": "Service-Worker-Allowed", "value": "/" }
+      ]
+    }
+  ]
+}
