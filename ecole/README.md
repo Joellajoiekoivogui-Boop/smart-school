@@ -1,0 +1,146 @@
+# 🎓 N°1 — L’école connectée, au même endroit
+
+N°1 est une plateforme numérique de gestion scolaire qui connecte **élèves,
+parents, enseignants et administration** dans un environnement unique. Elle
+centralise le suivi pédagogique, la communication, les présences, les devoirs,
+les résultats et la gestion de la scolarité, pour rendre l’école plus
+organisée, transparente et accessible.
+
+Elle remplace les échanges dispersés (cahiers, feuilles, appels, messages
+WhatsApp, tableaux Excel…) par un système numérique organisé.
+
+## Lancer l’application
+
+```bash
+cd ecole
+npm install
+npm run dev        # http://localhost:3001
+```
+
+Production : `npm run build && npm start`. L’application est une app Next.js
+autonome : elle se déploie telle quelle sur Vercel en choisissant `ecole/`
+comme *Root Directory*.
+
+Tests de la logique métier (permissions, moyennes, paiements, appel…) :
+
+```bash
+npm test
+```
+
+### Comptes de démonstration
+
+La page de connexion propose un accès en un clic à chaque espace :
+
+| Espace         | E-mail                      | Mot de passe |
+| -------------- | --------------------------- | ------------ |
+| Élève          | `mohamed.camara@n1.school`  | `eleve123`   |
+| Parent         | `parent.camara@n1.school`   | `parent123`  |
+| Enseignant     | `k.diallo@n1.school`        | `prof123`    |
+| Administration | `admin@n1.school`           | `admin123`   |
+
+Le parent (M. Sékou Camara) a deux enfants, Mohamed (5e A) et Aïssatou (3e A),
+pour montrer le changement d’enfant. Tout compte créé par l’administration
+(élève, parent, enseignant) peut aussi se connecter.
+
+> **Données de démonstration.** L’école de démo (4 classes, 28 élèves,
+> 6 enseignants, notes, présences, paiements…) est générée par
+> `lib/seed.js`, calée sur la date du jour, et enregistrée dans le navigateur
+> (`localStorage`). *Paramètres → Réinitialiser les données* la régénère.
+> Pour une mise en production multi-utilisateurs, ces données doivent passer
+> par une API et une base de données (voir la feuille de route).
+
+## Les quatre espaces
+
+**👨‍🎓 Élève** — tableau de bord, résultats et bulletins (téléchargeables en
+PDF), devoirs avec remise en ligne, programme des cours et supports,
+**espace d’entraînement** (QCM corrigés par matière et par notion), questions
+aux enseignants, emploi du temps, progression (courbe, évolution par matière,
+difficultés identifiées), notifications.
+
+**👨‍👩‍👦 Parent** — vue globale par enfant (moyenne, présence du jour,
+dernière sortie, devoirs en attente, scolarité payée), résultats, bulletins,
+devoirs, présences et absences, sorties, paiements (échéances, impayés,
+reçus), emploi du temps, messagerie avec les enseignants, notifications.
+
+**👨‍🏫 Enseignant** — classes, élèves avec **fiche de suivi individuel**
+(notes par matière vs classe, absences, devoirs rendus, progression,
+difficultés identifiées), publication et correction des devoirs, saisie des
+notes, performances par classe et par notion, **appel** (présent / absent /
+retard), emploi du temps, messages avec élèves et parents, annonces à une
+classe.
+
+**🏫 Administration** — élèves (inscription avec création des comptes élève
+et parent, affectation, dossiers, fratries), enseignants (matières, classes),
+classes et niveaux, matières (coefficients, volumes horaires), emplois du
+temps (conflits d’enseignant refusés), notes et bulletins, présences
+(justification des absences), sorties, scolarité (frais, paiements en
+espèces / Orange Money / MTN MoMo / virement, reçus, échéances, impayés),
+communication (tous, élèves, parents, enseignants, une classe, parents d’une
+classe), paramètres (année scolaire, trimestres, calendrier, matrice des
+rôles).
+
+## Rôles et permissions
+
+Chaque utilisateur a un rôle et des permissions explicites
+(`lib/permissions.js`). Toute écriture passe par `lib/actions.js`, qui
+vérifie **la permission et le périmètre** avant de modifier quoi que ce soit :
+
+- Élève → consulte ses notes, **ne peut pas** les modifier.
+- Enseignant → saisit les notes **de ses matières et de ses classes**,
+  **ne peut pas** toucher aux paiements.
+- Parent → consulte les résultats **de ses enfants uniquement**, sans
+  pouvoir les modifier.
+- Administration → dispose des droits de gestion.
+
+La messagerie suit la même logique : un élève écrit à ses enseignants, un
+parent aux enseignants de ses enfants et à l’administration, etc.
+
+## Charte graphique
+
+| Couleur       | Code      | Utilisation                   |
+| ------------- | --------- | ----------------------------- |
+| Bleu principal| `#2563EB` | Boutons, éléments principaux  |
+| Bleu nuit     | `#0F172A` | Titres, navigation            |
+| Vert          | `#10B981` | Succès, présence, paiement    |
+| Orange        | `#F59E0B` | Alertes, devoirs, attention   |
+| Rouge         | `#EF4444` | Absence, dette, erreur        |
+| Blanc         | `#FFFFFF` | Arrière-plan des cartes       |
+| Gris clair    | `#F8FAFC` | Arrière-plan                  |
+
+Typographie : **Plus Jakarta Sans** (titres) + **Inter** (texte). Cartes
+arrondies à 14 px, boutons à 10 px, petits éléments à 8 px, ombre
+`0 4px 20px rgba(15, 23, 42, 0.06)`. Interface responsive (mobile + ordinateur).
+Tous les jetons sont dans `app/globals.css`.
+
+## Structure
+
+```
+ecole/
+├── app/
+│   ├── login/page.jsx              # Connexion + comptes de démo
+│   ├── [role]/[[...section]]/      # Un espace par rôle (eleve, parent, enseignant, admin)
+│   └── globals.css                 # Charte graphique
+├── components/
+│   ├── Shell.jsx                   # Navigation, sélecteur d'enfant, notifications
+│   ├── ui.jsx                      # Cartes, badges, graphiques, modales…
+│   └── views/                      # Écrans par espace (+ vues partagées)
+├── lib/
+│   ├── seed.js, exercises.js       # École de démonstration, banque d'exercices
+│   ├── permissions.js              # Rôles, permissions, périmètres
+│   ├── actions.js                  # Toutes les écritures (contrôlées)
+│   ├── compute.js                  # Moyennes, rangs, bulletins, présences, scolarité…
+│   ├── navigation.js               # Architecture de navigation
+│   └── store.jsx                   # État + session
+└── tests/core.test.js              # Tests de la logique métier
+```
+
+## Feuille de route
+
+1. **Backend et base de données** : exposer `lib/actions.js` derrière une API
+   (Express/MongoDB, comme le backend existant du dépôt) avec authentification
+   JWT et mots de passe hachés, pour partager les données entre appareils.
+2. Envoi réel des notifications (SMS / WhatsApp / e-mail) aux parents lors
+   d’une absence, d’une sortie ou d’une échéance.
+3. Paiement Mobile Money en ligne (Orange Money, MTN MoMo).
+4. Stockage des fichiers (devoirs remis, supports de cours).
+5. Mode hors ligne (PWA) pour les connexions intermittentes.

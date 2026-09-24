@@ -1,0 +1,60 @@
+/** Architecture de navigation de chaque espace (cf. cahier des charges N°1). */
+export const NAVIGATION = {
+  eleve: [
+    { key: '', label: 'Tableau de bord', icon: 'home' },
+    { key: 'resultats', label: 'Résultats', icon: 'chart' },
+    { key: 'devoirs', label: 'Devoirs', icon: 'edit' },
+    { key: 'cours', label: 'Cours', icon: 'book' },
+    { key: 'entrainement', label: 'Entraînement', icon: 'brain' },
+    { key: 'enseignants', label: 'Enseignants', icon: 'teacher' },
+    { key: 'emploi-du-temps', label: 'Emploi du temps', icon: 'calendar' },
+    { key: 'progression', label: 'Progression', icon: 'trend' },
+    { key: 'messages', label: 'Messages', icon: 'message' },
+    { key: 'notifications', label: 'Notifications', icon: 'bell' },
+  ],
+  parent: [
+    { key: '', label: 'Tableau de bord', icon: 'home' },
+    { key: 'enfants', label: 'Mes enfants', icon: 'child' },
+    { key: 'resultats', label: 'Résultats', icon: 'chart' },
+    { key: 'bulletins', label: 'Bulletins', icon: 'file' },
+    { key: 'devoirs', label: 'Devoirs', icon: 'edit' },
+    { key: 'presences', label: 'Présences', icon: 'checkCircle' },
+    { key: 'sorties', label: 'Sorties', icon: 'door' },
+    { key: 'paiements', label: 'Paiements', icon: 'wallet' },
+    { key: 'emploi-du-temps', label: 'Emploi du temps', icon: 'calendar' },
+    { key: 'enseignants', label: 'Enseignants', icon: 'teacher' },
+    { key: 'messages', label: 'Messages', icon: 'message' },
+    { key: 'notifications', label: 'Notifications', icon: 'bell' },
+  ],
+  enseignant: [
+    { key: '', label: 'Tableau de bord', icon: 'home' },
+    { key: 'classes', label: 'Mes classes', icon: 'users' },
+    { key: 'eleves', label: 'Mes élèves', icon: 'user' },
+    { key: 'devoirs', label: 'Devoirs', icon: 'edit' },
+    { key: 'notes', label: 'Notes', icon: 'chart' },
+    { key: 'progression', label: 'Progression', icon: 'trend' },
+    { key: 'presences', label: 'Présences', icon: 'checkCircle' },
+    { key: 'emploi-du-temps', label: 'Emploi du temps', icon: 'calendar' },
+    { key: 'messages', label: 'Messages', icon: 'message' },
+    { key: 'notifications', label: 'Annonces & notifications', icon: 'bell' },
+  ],
+  admin: [
+    { key: '', label: 'Dashboard', icon: 'home' },
+    { key: 'eleves', label: 'Élèves', icon: 'user' },
+    { key: 'enseignants', label: 'Enseignants', icon: 'teacher' },
+    { key: 'classes', label: 'Classes', icon: 'school' },
+    { key: 'matieres', label: 'Matières', icon: 'book' },
+    { key: 'emploi-du-temps', label: 'Emploi du temps', icon: 'calendar' },
+    { key: 'notes', label: 'Notes & bulletins', icon: 'file' },
+    { key: 'presences', label: 'Présences', icon: 'checkCircle' },
+    { key: 'sorties', label: 'Sorties', icon: 'door' },
+    { key: 'scolarite', label: 'Scolarité', icon: 'wallet' },
+    { key: 'communication', label: 'Communication', icon: 'megaphone' },
+    { key: 'messages', label: 'Messages', icon: 'message' },
+    { key: 'parametres', label: 'Paramètres', icon: 'settings' },
+  ],
+};
+
+export function sectionLabel(role, key) {
+  return NAVIGATION[role]?.find((i) => i.key === key)?.label || '';
+}

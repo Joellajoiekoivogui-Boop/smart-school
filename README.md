@@ -335,6 +335,13 @@ npm install
 npm run dev
 ```
 
+## 🎓 N°1 — Application de gestion scolaire (ecole/)
+
+Le dossier `ecole/` contient **N°1**, une plateforme de gestion scolaire
+(Next.js) avec quatre espaces : Élève, Parent, Enseignant et Administration.
+Voir [`ecole/README.md`](ecole/README.md) pour la présentation, les comptes de
+démonstration et le lancement (`cd ecole && npm install && npm run dev`).
+
 ## Feuille de route
 
 - [x] Tableau de bord front-end (Next.js, `dashboard/`) au-dessus de l'API
