@@ -17,9 +17,13 @@ npm install
 npm run dev        # http://localhost:3001
 ```
 
-Production : `npm run build && npm start`. L’application est une app Next.js
-autonome : elle se déploie telle quelle sur Vercel en choisissant `ecole/`
-comme *Root Directory*.
+Production : `npm run build` génère un **site 100 % statique** dans `out/`
+(aucune fonction serveur) ; `npm start` le sert en local.
+
+**Vercel** : le fichier `vercel.json` à la racine du dépôt indique à Vercel de
+construire `ecole/` et de publier `ecole/out`. Il suffit d’importer le dépôt,
+sans rien régler. (Si le projet Vercel a `ecole` comme *Root Directory*, ce
+fichier est ignoré et Vercel détecte Next.js tout seul : ça marche aussi.)
 
 Tests de la logique métier (permissions, moyennes, paiements, appel…) :
 

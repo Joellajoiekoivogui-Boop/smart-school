@@ -229,7 +229,7 @@ export function buildSeed(now = new Date()) {
         id: `p${parents.length + 1}`,
         firstName: key === 'camara-famille' ? 'Sékou' : ['Mamadou', 'Fodé', 'Aïssata', 'Mariam', 'Ibrahima', 'Hadja Fatou', 'Kerfalla', 'Sidiki'][parents.length % 8],
         lastName: s.lastName,
-        title: key === 'camara-famille' ? 'M.' : parents.length % 3 === 2 ? 'Mme' : 'M.',
+        title: key === 'camara-famille' || ![2, 3, 5].includes(parents.length % 8) ? 'M.' : 'Mme',
         phone: `+224 6${20 + (parents.length % 9)} ${String(10 + parents.length).padStart(2, '0')} ${String(30 + parents.length * 2).slice(-2)} ${String(40 + parents.length * 3).slice(-2)}`,
         relation: 'Père / Mère',
         childrenIds: [],

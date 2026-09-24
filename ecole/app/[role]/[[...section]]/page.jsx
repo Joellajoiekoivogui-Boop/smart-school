@@ -1,20 +1,20 @@
-'use client';
-import { useParams } from 'next/navigation';
-import Shell from '@/components/Shell';
+import { notFound } from 'next/navigation';
+import RoleRoute from '@/components/RoleRoute';
 import { NAVIGATION } from '@/lib/navigation';
 
-export default function RolePage() {
-  const { role, section } = useParams();
-  if (!NAVIGATION[role]) {
-    return (
-      <div className="empty" style={{ paddingTop: 120 }}>
-        <h1>Page introuvable</h1>
-        <a className="btn btn-primary mt" href="/login">
-          Retour à la connexion
-        </a>
-      </div>
-    );
-  }
-  const segments = (Array.isArray(section) ? section : section ? [section] : []).map(decodeURIComponent);
-  return <Shell role={role} segments={segments} />;
+// Toutes les pages sont connues à l'avance (4 espaces × leurs rubriques) :
+// elles sont générées en HTML statique au build, sans aucune fonction serveur.
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return Object.entries(NAVIGATION).flatMap(([role, items]) =>
+    items.map((item) => ({ role, section: item.key ? [item.key] : [] })),
+  );
+}
+
+export default async function RolePage({ params }) {
+  const { role, section } = await params;
+  const key = section?.[0] || '';
+  if (!NAVIGATION[role]?.some((i) => i.key === key)) notFound();
+  return <RoleRoute role={role} section={key} />;
 }

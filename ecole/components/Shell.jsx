@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { NAVIGATION, sectionLabel } from '@/lib/navigation';
 import { ROLES } from '@/lib/permissions';
@@ -21,8 +21,13 @@ export default function Shell({ role, segments }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [childId, setChildId] = useState(null);
 
+  const searchParams = useSearchParams();
   const section = segments[0] || '';
-  const params = segments.slice(1);
+  // Le site est exporté en statique : les identifiants (élève, contact…) passent
+  // en paramètre `?id=` plutôt que dans le chemin, pour que chaque page existe
+  // en fichier HTML.
+  const id = searchParams.get('id');
+  const params = id ? [id] : [];
 
   useEffect(() => {
     if (!ready) return;
@@ -57,7 +62,11 @@ export default function Shell({ role, segments }) {
   const counts = { messages: unreadMessages, notifications: unreadNotifs };
 
   const studentId = role === 'eleve' ? user.personId : role === 'parent' ? childId : null;
-  const go = (path) => router.push(`/${role}${path ? `/${path}` : ''}`);
+  const go = (path) => {
+    const [sec, ...rest] = (path || '').split('/');
+    const query = rest.length ? `?id=${encodeURIComponent(rest.join('/'))}` : '';
+    router.push(`/${role}${sec ? `/${sec}` : ''}${query}`);
+  };
 
   const selectChild = (id) => {
     setChildId(id);
