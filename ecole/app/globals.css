@@ -653,10 +653,50 @@ body {
 .modal { border-radius: 20px; }
 .modal-back { backdrop-filter: blur(4px); }
 
+
+/* ================================================================ Effets */
+.ripple {
+  position: absolute; border-radius: 50%; pointer-events: none; z-index: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, rgba(37, 99, 235, 0.18) 45%, transparent 70%);
+  transform: scale(0); animation: n1-ripple 0.65s ease-out forwards;
+}
+.btn:not(.btn-primary):not(.btn-success) .ripple, .tab .ripple, .choice .ripple, .chat-contact .ripple, .priority .ripple, .pay-method .ripple, .assistant-mode .ripple {
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.22) 0%, rgba(37, 99, 235, 0.08) 45%, transparent 70%);
+}
+@keyframes n1-ripple { to { transform: scale(1); opacity: 0; } }
+
+.spotlight {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; z-index: 0;
+  background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 50%), rgba(37, 99, 235, 0.12), transparent 70%);
+  transition: opacity 0.3s;
+}
+.spotlight-px { background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(37, 99, 235, 0.07), transparent 65%); }
+.card:hover > .spotlight, .stat:hover > .spotlight { opacity: 1; }
+.card { position: relative; }
+.card > *:not(.spotlight) { position: relative; }
+.stat { transform-style: preserve-3d; }
+
+.priority-red { position: relative; }
+.priority-red::after {
+  content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); animation: n1-pulse 2.2s ease-out infinite;
+}
+@keyframes n1-pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); } 70%, 100% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
+
+.toast { overflow: hidden; padding-bottom: 15px; }
+.toast-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, 0.55); transform-origin: left; }
+.tt-cell.now { animation: n1-glow 2.4s ease-in-out infinite; }
+@keyframes n1-glow { 0%, 100% { box-shadow: 0 10px 24px -10px rgba(37, 99, 235, 0.8); } 50% { box-shadow: 0 10px 34px -6px rgba(79, 70, 229, 0.95); } }
+.avatar { transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.list-item:hover .avatar, .chat-contact:hover .avatar, tr:hover .avatar { transform: scale(1.12) rotate(-4deg); }
+.notif-icon, .timeline-dot { transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.notif:hover .notif-icon, .list-item:hover .notif-icon, .timeline-item:hover .timeline-dot { transform: scale(1.15) rotate(-8deg); }
+
 /* ---------------------------------------------------------------- Mouvement réduit */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
   .btn:active:not(:disabled) { transform: none; }
+  .ripple, .priority-red::after, .tt-cell.now { animation: none !important; }
 }
 
 /* ---------------------------------------------------------------- Responsive */

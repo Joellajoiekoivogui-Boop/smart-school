@@ -181,6 +181,13 @@ L’interface est vivante mais reste lisible (`components/motion.jsx`) :
   « pop » ; fenêtres qui s’ouvrent avec un ressort et fond flouté ;
 - **connexion** : titre mot par mot, orbes lumineux en mouvement, carte qui
   tremble en cas d’erreur.
+- **effets** (`components/fx.jsx`) : confettis sur les réussites (séance sans
+  faute, paiement, devoir remis, bulletins publiés…), statistiques qui
+  s’inclinent en 3D avec un halo qui suit la souris, onde au clic sur les
+  boutons, barre de progression du défilement, écran de chargement animé,
+  étincelles et parallaxe sur les bandeaux, réponses de l’assistant tapées en
+  direct, point « en direct » qui pulse sur les courbes, priorités urgentes
+  qui palpitent, notifications avec barre de temps.
 
 Si l’utilisateur a activé « réduire les animations » dans son système, les
 déplacements sont supprimés (`MotionConfig reducedMotion="user"` + règle CSS

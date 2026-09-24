@@ -305,7 +305,9 @@ export function TrainingView({ state, user, run }) {
         // Thème dominant de la série (pour le suivi des difficultés).
         const topics = session.questions.map((x) => x.topic);
         const topic = session.topic || topics.sort((a, b) => topics.filter((t) => t === b).length - topics.filter((t) => t === a).length)[0];
-        run(A.recordTraining, { subjectId: session.subjectId, topic, score: session.correct, total: session.questions.length });
+        const total = session.questions.length;
+        const cheer = session.correct === total ? '🎉 Sans faute ! +20 XP de bonus' : session.correct / total >= 0.8 ? '🎉 Bravo, séance réussie !' : undefined;
+        run(A.recordTraining, { subjectId: session.subjectId, topic, score: session.correct, total }, cheer);
       }
       setSession({ ...session, index: nextIndex, selected: null, checked: false });
     };

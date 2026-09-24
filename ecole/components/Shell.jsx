@@ -9,6 +9,7 @@ import { childrenOf, notificationsFor, studentClass } from '@/lib/compute';
 import { motion } from 'motion/react';
 import Icon from './Icon';
 import { Page } from './motion';
+import { RippleLayer, ScrollProgress, Splash } from './fx';
 import { Avatar } from './ui';
 import { VIEWS } from './views';
 
@@ -53,7 +54,7 @@ export default function Shell({ role, segments }) {
 
   useEffect(() => setMenuOpen(false), [section]);
 
-  if (!ready || !user || user.role !== role) return null;
+  if (!ready || !user || user.role !== role) return <Splash />;
 
   const nav = NAVIGATION[role];
   const item = nav.find((i) => i.key === section);
@@ -79,6 +80,8 @@ export default function Shell({ role, segments }) {
 
   return (
     <div className={`app ${menuOpen ? 'menu-open' : ''}`}>
+      <ScrollProgress />
+      <RippleLayer />
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <span className="absolute -top-40 right-[-10%] h-[28rem] w-[28rem] rounded-full bg-blue-400/15 blur-3xl animate-float-slow" />
         <span className="absolute bottom-[-12rem] left-[20%] h-[26rem] w-[26rem] rounded-full bg-indigo-400/10 blur-3xl animate-float" />
@@ -86,7 +89,9 @@ export default function Shell({ role, segments }) {
       </div>
       <aside className="sidebar" aria-label="Navigation principale">
         <div className="brand">
-          <span className="brand-mark">N°1</span>
+          <motion.span className="brand-mark" whileHover={{ rotate: 360, scale: 1.1 }} transition={{ type: 'spring', stiffness: 120, damping: 10 }}>
+            N°1
+          </motion.span>
           <div>
             <div className="brand-name">{state.school.name}</div>
             <div className="brand-sub">
@@ -173,7 +178,10 @@ export default function Shell({ role, segments }) {
                 <Icon name="bell" />
               </motion.span>
               {unreadNotifs > 0 && (
-                <span className="dot" style={{ position: 'absolute', top: 10, right: 10, background: 'var(--red)' }} />
+                <span style={{ position: 'absolute', top: 9, right: 9 }} className="flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+                </span>
               )}
             </Link>
           )}

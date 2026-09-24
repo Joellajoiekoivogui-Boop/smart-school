@@ -995,7 +995,7 @@ function SubmitModal({ homework, run, onClose }) {
   const [content, setContent] = useState(homework.submission?.content || '');
   const [fileName, setFileName] = useState(homework.submission?.fileName || '');
   const submit = () => {
-    const res = run(A.submitHomework, { homeworkId: homework.id, content, fileName }, 'Devoir remis avec succès.');
+    const res = run(A.submitHomework, { homeworkId: homework.id, content, fileName }, '🎉 Devoir remis avec succès !');
     if (res.ok) onClose();
   };
   return (
@@ -1421,7 +1421,7 @@ function OnlinePaymentModal({ state, run, studentId, onClose, onPaid }) {
       setError('Code incorrect.');
       return;
     }
-    const res = run(A.payOnline, { studentId, ...form }, 'Paiement confirmé : reçu disponible.');
+    const res = run(A.payOnline, { studentId, ...form }, '🎉 Paiement confirmé : reçu disponible.');
     if (res.ok) onPaid(res.result);
   };
   return (

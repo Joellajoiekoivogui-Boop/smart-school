@@ -282,7 +282,7 @@ function StudentModal({ state, run, student, onClose, onCreated }) {
       delete payload.parentFirstName;
       delete payload.parentLastName;
     } else delete payload.parentId;
-    const res = run(A.saveStudent, payload, isNew ? 'Élève inscrit. Ses identifiants de connexion ont été créés.' : 'Dossier mis à jour.');
+    const res = run(A.saveStudent, payload, isNew ? '🎉 Élève inscrit : identifiants créés.' : 'Dossier mis à jour.');
     if (res.ok) {
       onClose();
       if (res.result?.credentials?.length) onCreated?.(res.result.credentials);
@@ -850,7 +850,7 @@ export function AdminGradesView(props) {
                   <button
                     className="btn btn-sm btn-success"
                     disabled={!ranking.length}
-                    onClick={() => window.confirm(`Publier les ${ranking.length} bulletins de la ${cls?.name} ?`) && run(A.publishBulletins, { classId, termId }, 'Bulletins publiés : familles alertées.')}
+                    onClick={() => window.confirm(`Publier les ${ranking.length} bulletins de la ${cls?.name} ?`) && run(A.publishBulletins, { classId, termId }, '🎉 Bulletins publiés : familles alertées.')}
                   >
                     <Icon name="send" size={14} /> Publier
                   </button>

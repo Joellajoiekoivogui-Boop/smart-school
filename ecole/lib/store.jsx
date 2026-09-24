@@ -9,6 +9,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { buildSeed } from './seed.js';
+import { Confetti } from '@/components/fx';
 import { migrateState } from './seed-extra.js';
 import { verifyPassword } from './crypto.js';
 import { appendAudit } from './actions.js';
@@ -62,8 +63,10 @@ export function StoreProvider({ children }) {
 
   const user = useMemo(() => state?.users.find((u) => u.id === userId) || null, [state, userId]);
 
+  // Un message qui commence par 🎉 déclenche une pluie de confettis.
   const notify = useCallback((message, type = 'success') => {
-    setToast({ message, type, id: Date.now() });
+    const celebrate = type === 'success' && String(message).startsWith('🎉');
+    setToast({ message, type: celebrate ? 'celebrate' : type, id: Date.now() });
   }, []);
 
   useEffect(() => {
@@ -168,18 +171,20 @@ export function StoreProvider({ children }) {
       <AnimatePresence>
         {toast && (
           <motion.div
-            className={`toast toast-${toast.type}`}
+            className={`toast toast-${toast.type === 'celebrate' ? 'success' : toast.type}`}
             role="status"
             key={toast.id}
-            initial={{ opacity: 0, y: 24, x: '-50%', scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, x: '-50%', scale: 1 }}
-            exit={{ opacity: 0, y: 12, x: '-50%', scale: 0.98 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 40, x: '-50%', scale: 0.8 }}
+            animate={toast.type === 'error' ? { opacity: 1, y: 0, x: ['-50%', '-52%', '-48%', '-51%', '-50%'], scale: 1 } : { opacity: 1, y: 0, x: '-50%', scale: 1 }}
+            exit={{ opacity: 0, y: 20, x: '-50%', scale: 0.9, filter: 'blur(4px)' }}
+            transition={{ type: 'spring', stiffness: 380, damping: 24 }}
           >
             {toast.message}
+            <motion.span className="toast-progress" initial={{ scaleX: 1 }} animate={{ scaleX: 0 }} transition={{ duration: 3.5, ease: 'linear' }} />
           </motion.div>
         )}
       </AnimatePresence>
+      {toast?.type === 'celebrate' && <Confetti burstKey={toast.id} />}
     </StoreContext.Provider>
   );
 }

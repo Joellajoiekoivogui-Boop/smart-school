@@ -19,7 +19,7 @@ export function AccountView({ user, run, go, role }) {
       });
       return;
     }
-    const res = run(A.changePassword, { current: form.current, next: form.next }, 'Mot de passe modifié.');
+    const res = run(A.changePassword, { current: form.current, next: form.next }, '🎉 Mot de passe modifié.');
     if (res.ok) {
       setForm({ current: '', next: '', confirm: '' });
       if (user.mustChangePassword) go('');

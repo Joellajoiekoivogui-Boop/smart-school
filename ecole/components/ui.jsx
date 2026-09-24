@@ -1,6 +1,7 @@
 'use client';
 import { useId, useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { Sparkles, spotlightHandlers, useTilt } from './fx';
 import Icon from './Icon';
 import { AnimatedValue, EASE, SPRING, itemVariants, listItemVariants, listVariants } from './motion';
 import { formatDate, formatNote } from '@/lib/compute';
@@ -25,7 +26,9 @@ export function Card({ title, action, children, className = '', flush = false })
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, amount: 0.08 }}
+      {...spotlightHandlers()}
     >
+      <span aria-hidden className="spotlight spotlight-px" />
       {(title || action) && (
         <div className="card-head">
           {title && <h2>{title}</h2>}
@@ -38,8 +41,10 @@ export function Card({ title, action, children, className = '', flush = false })
 }
 
 export function Stat({ label, value, unit, sub, icon, tone = 'blue', children }) {
+  const tilt = useTilt(7);
   return (
-    <motion.div className={`card stat stat-${tone}`} variants={itemVariants} whileHover="hover">
+    <motion.div className={`card stat stat-${tone}`} variants={itemVariants} whileHover="hover" {...tilt}>
+      <span aria-hidden className="spotlight" />
       <div className="stat-top">
         <span className="stat-label">{label}</span>
         {icon && (
@@ -193,7 +198,7 @@ export function Ring({ value, size = 88, stroke = 9, color = 'var(--blue)', labe
         />
       </svg>
       <div className="ring-label" style={{ fontSize: size / 5 }}>
-        {label ?? `${Math.round(pct)} %`}
+        {label ?? <AnimatedValue value={`${Math.round(pct)} %`} />}
       </div>
     </div>
   );
@@ -293,6 +298,17 @@ export function LineChart({ points, height = 200, min = 0, max = 20, format = fo
             transition={{ duration: 0.25, delay: 0.1 + (i / Math.max(1, points.length - 1)) * 0.8 }}
           />
         ))}
+        <motion.circle
+          cx={x(points.length - 1)}
+          cy={y(last.value)}
+          r={6}
+          fill="none"
+          stroke="#2563EB"
+          strokeWidth="2"
+          initial={{ opacity: 0 }}
+          animate={{ r: [6, 16], opacity: [0.6, 0] }}
+          transition={{ duration: 1.6, repeat: Infinity, delay: 1, ease: 'easeOut' }}
+        />
         <motion.text
           x={x(points.length - 1) + 10}
           y={y(last.value) + 4}
@@ -384,14 +400,33 @@ export function Select({ value, onChange, options, className = 'select', ...rest
  * et motif discret en arrière-plan.
  */
 export function Hero({ children, className = '' }) {
+  // Parallaxe : les halos suivent (doucement) le pointeur.
+  const px = useMotionValue(0);
+  const py = useMotionValue(0);
+  const sx = useSpring(px, { stiffness: 60, damping: 18 });
+  const sy = useSpring(py, { stiffness: 60, damping: 18 });
+  const x1 = useTransform(sx, [-1, 1], [-40, 40]);
+  const y1 = useTransform(sy, [-1, 1], [-30, 30]);
+  const x2 = useTransform(sx, [-1, 1], [30, -30]);
+  const y2 = useTransform(sy, [-1, 1], [24, -24]);
   return (
     <motion.div
       className={`hero relative isolate overflow-hidden bg-[linear-gradient(120deg,#0f172a_0%,#1e3a8a_45%,#2563eb_75%,#4f46e5_100%)] bg-[length:220%_220%] animate-gradient ${className}`}
       variants={itemVariants}
+      onPointerMove={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        px.set(((e.clientX - r.left) / r.width) * 2 - 1);
+        py.set(((e.clientY - r.top) / r.height) * 2 - 1);
+      }}
+      onPointerLeave={() => {
+        px.set(0);
+        py.set(0);
+      }}
     >
-      <span aria-hidden className="pointer-events-none absolute -top-24 -right-16 -z-10 h-72 w-72 rounded-full bg-sky-400/30 blur-3xl animate-float" />
-      <span aria-hidden className="pointer-events-none absolute -bottom-28 left-1/4 -z-10 h-72 w-72 rounded-full bg-indigo-500/35 blur-3xl animate-float-slow" />
+      <motion.span aria-hidden style={{ x: x1, y: y1 }} className="pointer-events-none absolute -top-24 -right-16 -z-10 h-72 w-72 rounded-full bg-sky-400/30 blur-3xl" />
+      <motion.span aria-hidden style={{ x: x2, y: y2 }} className="pointer-events-none absolute -bottom-28 left-1/4 -z-10 h-72 w-72 rounded-full bg-indigo-500/35 blur-3xl" />
       <span aria-hidden className="pointer-events-none absolute top-6 left-6 -z-10 h-24 w-24 rounded-full bg-emerald-400/20 blur-2xl animate-float" />
+      <Sparkles />
       <span
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12] [background-image:radial-gradient(rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:18px_18px] [mask-image:linear-gradient(to_left,black,transparent_70%)]"
