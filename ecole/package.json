@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "motion": "^13.4.2",
-    "next": "^16.3.5",
+    "next": "^15.5.26",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -21,8 +21,19 @@
   },
   "type": "module",
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.3",
+    "autoprefixer": "^10.6.1",
     "postcss": "^8.5.28",
-    "tailwindcss": "^4.3.3"
-  }
+    "tailwindcss": "^3.4.17"
+  },
+  "browserslist": [
+    "chrome >= 64",
+    "and_chr >= 64",
+    "android >= 64",
+    "samsung >= 9",
+    "safari >= 12",
+    "ios_saf >= 12",
+    "firefox >= 67",
+    "edge >= 79",
+    "opera >= 51"
+  ]
 }

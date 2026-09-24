@@ -86,6 +86,7 @@ test('paiement en ligne : périmètre, montant et reçu', () => {
   assert.throws(() => A.payOnline(s, parent, { studentId: 's2', amount: 10000, method: 'Orange Money', phone: '620000000' }));
   assert.throws(() => A.payOnline(s, parent, { studentId: 's1', amount: balance + 1, method: 'Orange Money', phone: '620000000' }), /dépasse/);
   assert.throws(() => A.payOnline(s, parent, { studentId: 's1', amount: 10000, method: 'Orange Money', phone: '12' }), /invalide/);
+  assert.throws(() => A.payOnline(s, parent, { studentId: 's1', amount: 10000, method: 'Orange Money', phone: '+33 6 12 34 56 78' }), /guinéen/);
   const p = A.payOnline(s, parent, { studentId: 's1', amount: 100000, method: 'MTN MoMo', phone: '+224 664 12 34 56' });
   assert.equal(p.channel, 'en_ligne');
   assert.match(p.receiptNo, /^REC-/);
@@ -163,4 +164,29 @@ test('gamification et entraînement personnalisé', () => {
 
 test('export CSV compatible Excel', () => {
   assert.equal(toCSV([['Nom', 'Note'], ['Camara; M.', 14.5]]), 'Nom;Note\r\n"Camara; M.";14,5');
+});
+
+test('Guinée : classes 7e–10e année, migration v2 → v3, numéros +224', () => {
+  const s = fresh();
+  assert.deepEqual(s.classes.map((c) => c.name), ['7e A', '8e A', '9e A', '10e A']);
+  assert.equal(s.levels.find((l) => l.id === 'n3').name, '10e année');
+  assert.match(s.school.country, /Guinée/);
+  assert.ok(s.calendar.some((e) => /BEPC/.test(e.title)));
+  // Données enregistrées avec l'ancienne nomenclature (v2)
+  const v2 = fresh();
+  v2.version = 2;
+  v2.classes[1].name = '5e A';
+  v2.levels[1].name = '5e';
+  v2.classes[2].name = 'Classe perso';
+  delete v2.school.country;
+  const v3 = migrateState(v2, NOW);
+  assert.equal(v3.version, STATE_VERSION);
+  assert.equal(v3.classes[1].name, '8e A');
+  assert.equal(v3.levels[1].name, '8e année');
+  assert.equal(v3.classes[2].name, 'Classe perso', 'nom personnalisé conservé');
+  assert.match(v3.school.country, /Guinée/);
+  assert.equal(A.normalizeGuineaMobile('+224 620 12 34 56'), '620123456');
+  assert.equal(A.normalizeGuineaMobile('00224664123456'), '664123456');
+  assert.equal(A.normalizeGuineaMobile('0612345678'), null);
+  assert.equal(A.formatGuineaPhone('620123456'), '620 12 34 56');
 });

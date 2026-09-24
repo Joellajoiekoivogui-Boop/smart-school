@@ -16,7 +16,7 @@ import {
 } from './permissions.js';
 import { byId, fullName, formatMoney, formatDate, paymentStatus } from './compute.js';
 import { toISODate } from './seed.js';
-import { hashPassword, makeSalt, passwordProblem, verifyPassword } from './crypto.js';
+import { cryptoApi, hashPassword, makeSalt, passwordProblem, verifyPassword } from './crypto.js';
 
 function uid(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -39,7 +39,7 @@ function slugEmail(firstName, lastName, suffix = '') {
 
 function tempPassword() {
   const bytes = new Uint8Array(4);
-  globalThis.crypto.getRandomValues(bytes);
+  cryptoApi().getRandomValues(bytes);
   return `N1-${[...bytes].map((b) => (b % 36).toString(36)).join('')}${10 + (bytes[0] % 89)}`;
 }
 
@@ -738,6 +738,22 @@ export function decideExitAuthorization(draft, user, { authorizationId, approve,
 export const ONLINE_METHODS = ['Orange Money', 'MTN MoMo'];
 
 /**
+ * Numéro mobile guinéen : 9 chiffres commençant par 6 (indicatif +224
+ * facultatif). Renvoie les 9 chiffres, ou null si le numéro est invalide.
+ */
+export function normalizeGuineaMobile(input) {
+  let d = String(input || '').replace(/\D/g, '');
+  if (d.startsWith('00224')) d = d.slice(5);
+  else if (d.startsWith('224') && d.length === 12) d = d.slice(3);
+  return /^6\d{8}$/.test(d) ? d : null;
+}
+
+export function formatGuineaPhone(digits) {
+  const d = String(digits || '').replace(/\D/g, '').slice(0, 9);
+  return [d.slice(0, 3), d.slice(3, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(' ');
+}
+
+/**
  * Paiement en ligne par le parent. En démonstration, la confirmation Mobile
  * Money est simulée ; en production, ce paiement ne serait enregistré qu'après
  * la notification de l'opérateur (webhook).
@@ -746,8 +762,8 @@ export function payOnline(draft, user, { studentId, amount, method, phone }) {
   requirePermission(user, 'payments:online');
   assertParentOf(draft, user, studentId);
   if (!ONLINE_METHODS.includes(method)) throw new Error('Moyen de paiement non disponible.');
-  const digits = String(phone || '').replace(/\D/g, '');
-  if (digits.length < 9) throw new Error('Numéro Mobile Money invalide.');
+  const digits = normalizeGuineaMobile(phone);
+  if (!digits) throw new Error('Numéro Mobile Money invalide : indiquez un numéro guinéen à 9 chiffres (6xx xx xx xx).');
   const value = Math.round(Number(String(amount).replace(/\s/g, '')));
   if (!value || value < 1000) throw new Error('Le montant minimum est de 1 000 GNF.');
   const balance = paymentStatus(draft, studentId).balance;
@@ -762,7 +778,7 @@ export function payOnline(draft, user, { studentId, amount, method, phone }) {
     receiptNo: `REC-${year}-${String(draft.payments.length + 1).padStart(4, '0')}`,
     recordedBy: user.id,
     channel: 'en_ligne',
-    phone: `${digits.slice(0, 3)} •• •• ${digits.slice(-2)}`,
+    phone: `+224 ${digits.slice(0, 3)} •• •• ${digits.slice(-2)}`,
     reference: `${method === 'Orange Money' ? 'OM' : 'MM'}${Date.now().toString(36).toUpperCase()}`,
     status: 'confirme',
   };

@@ -6,7 +6,7 @@ import { useStore } from '@/lib/store';
 import Icon from '@/components/Icon';
 
 const DEMO = [
-  { role: 'Élève', email: 'mohamed.camara@n1.school', password: 'eleve123', who: 'Mohamed Camara — 5e A', icon: 'user', tint: 'from-amber-400 to-orange-500' },
+  { role: 'Élève', email: 'mohamed.camara@n1.school', password: 'eleve123', who: 'Mohamed Camara — 8e A', icon: 'user', tint: 'from-amber-400 to-orange-500' },
   { role: 'Parent', email: 'parent.camara@n1.school', password: 'parent123', who: 'M. Sékou Camara', icon: 'child', tint: 'from-emerald-400 to-teal-500' },
   { role: 'Enseignant', email: 'k.diallo@n1.school', password: 'prof123', who: 'Mme Kadiatou Diallo — Maths', icon: 'teacher', tint: 'from-sky-400 to-blue-600' },
   { role: 'Administration', email: 'admin@n1.school', password: 'admin123', who: 'Direction des études', icon: 'school', tint: 'from-indigo-400 to-violet-600' },

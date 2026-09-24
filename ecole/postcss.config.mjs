@@ -1,5 +1,7 @@
 export default {
   plugins: {
-    '@tailwindcss/postcss': {},
+    tailwindcss: {},
+    './scripts/postcss-inset-fallback.cjs': {},
+    autoprefixer: {},
   },
 };

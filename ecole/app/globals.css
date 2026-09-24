@@ -5,51 +5,11 @@
    Titres : Plus Jakarta Sans · Texte : Inter
    ========================================================================== */
 
-@import 'tailwindcss';
+@tailwind base;
 
-/* Jetons de la charte, exposés à Tailwind (bg-brand, text-navy, font-display…). */
-@theme {
-  --color-brand: #2563eb;
-  --color-brand-600: #1d4ed8;
-  --color-brand-50: #eff6ff;
-  --color-navy: #0f172a;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-mist: #f8fafc;
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --radius-card: 18px;
-  --shadow-soft: 0 4px 20px rgba(15, 23, 42, 0.06);
-  --shadow-glow: 0 10px 40px -10px rgba(37, 99, 235, 0.45);
-  --animate-float: float 9s ease-in-out infinite;
-  --animate-float-slow: float 14s ease-in-out infinite;
-  --animate-shine: shine 2.8s ease-in-out infinite;
-  --animate-gradient: gradient 12s ease infinite;
-  --animate-rise: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+/* Styles de l'application, placés avant les utilitaires Tailwind pour que
+   ceux-ci puissent les compléter ou les surcharger. */
 
-  @keyframes float {
-    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-    33% { transform: translate3d(12px, -18px, 0) scale(1.05); }
-    66% { transform: translate3d(-10px, 10px, 0) scale(0.97); }
-  }
-  @keyframes shine {
-    0% { transform: translateX(-120%) skewX(-20deg); }
-    60%, 100% { transform: translateX(220%) skewX(-20deg); }
-  }
-  @keyframes gradient {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: none; }
-  }
-}
-
-/* Styles de l'application : placés dans la couche « components » pour que les
-   utilitaires Tailwind puissent les compléter ou les surcharger. */
-@layer components {
 :root {
   --blue: #2563eb;
   --blue-600: #1d4ed8;
@@ -447,6 +407,9 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .bulletin table { width: 100%; border-collapse: collapse; margin-top: 14px; }
 .bulletin th, .bulletin td { border: 1px solid #cbd5e1; padding: 6px 8px; }
 .bulletin th { background: #f1f5f9; font-size: 12px; text-align: left; }
+.official-head { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; font-size: 11px; line-height: 1.35; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #cbd5e1; }
+.official-flag { display: flex; width: 42px; height: 28px; border-radius: 3px; overflow: hidden; box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.15); }
+.official-flag span { flex: 1; }
 .bulletin-head { display: flex; justify-content: space-between; gap: 16px; border-bottom: 2px solid var(--navy); padding-bottom: 12px; }
 .bulletin-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
 .bulletin-summary > div { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 10px; }
@@ -524,6 +487,9 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .badge-icon { font-size: 24px; line-height: 1; }
 
 /* ---------------------------------------------------------------- v2 : paiement en ligne */
+.phone-field { display: flex; align-items: stretch; }
+.phone-prefix { display: inline-flex; align-items: center; padding: 0 10px; border: 1px solid var(--gray-300); border-right: 0; border-radius: var(--r-sm) 0 0 var(--r-sm); background: var(--gray-50); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.phone-field .input { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
 .pay-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .pay-method { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: var(--r-btn); border: 1.5px solid var(--border); background: var(--white); cursor: pointer; font-weight: 600; }
 .pay-method.on { border-color: var(--blue); background: var(--blue-50); }
@@ -692,6 +658,49 @@ body {
 .notif-icon, .timeline-dot { transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .notif:hover .notif-icon, .list-item:hover .notif-icon, .timeline-item:hover .timeline-dot { transform: scale(1.15) rotate(-8deg); }
 
+
+/* ================================================================ Tous les téléphones */
+/* Mode léger (téléphones modestes) : on retire les effets coûteux. */
+.lite .blur-3xl, .lite .blur-2xl { display: none; }
+.lite .topbar, .lite .modal-back, .lite .backdrop-blur, .lite .backdrop-blur-md, .lite .backdrop-blur-xl { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.lite .topbar { background: rgba(248, 250, 252, 0.97); }
+.lite .animate-gradient { animation: none; }
+.lite body { background-attachment: scroll; }
+
+/* Encoches et barres système (iPhone X+, Android plein écran) */
+.topbar { padding-top: max(14px, env(safe-area-inset-top)); }
+.sidebar { padding-bottom: env(safe-area-inset-bottom); }
+.toast { bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px)); }
+
+@media (max-width: 860px) {
+  /* iPhone : pas de zoom automatique quand on touche un champ */
+  .input, .select, .textarea, input, select, textarea { font-size: 16px; }
+  .topbar { padding-top: max(12px, env(safe-area-inset-top)); padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+  .content { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+  .btn { min-height: 42px; }
+  .btn-sm { min-height: 36px; }
+  .modal-back { align-items: end; padding: 0; }
+  .modal { max-width: 100% !important; border-radius: 20px 20px 0 0; max-height: 92vh; padding-bottom: env(safe-area-inset-bottom); }
+  .modal-foot { flex-wrap: wrap; }
+  .modal-foot .btn { flex: 1 1 auto; }
+}
+@media (max-width: 380px) {
+  .g-4 { grid-template-columns: 1fr; }
+  .hero { padding: 20px; }
+  .hero h1 { font-size: 22px; }
+  .stat-value { font-size: 22px; }
+  .tabs { max-width: 100%; }
+  .page-head h1 { font-size: 20px; }
+  .demo-accounts { grid-template-columns: 1fr; }
+}
+/* Écrans tactiles : pas d'effets de survol « collants » */
+@media (hover: none) {
+  .card:hover { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.12); }
+  .nav a:hover { transform: none; }
+  .btn:hover:not(:disabled) { transform: none; }
+  .card:hover > .spotlight, .stat:hover > .spotlight { opacity: 0; }
+}
+
 /* ---------------------------------------------------------------- Mouvement réduit */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
@@ -735,4 +744,6 @@ body {
   .demo-accounts { grid-template-columns: 1fr; }
 }
 
-}
+
+@tailwind components;
+@tailwind utilities;

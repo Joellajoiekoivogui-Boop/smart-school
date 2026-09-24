@@ -6,11 +6,12 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react';
+import { LITE } from './motion';
 
 const CONFETTI_COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#4F46E5', '#38BDF8', '#F472B6'];
 
 /** Pluie de confettis (rejouée à chaque nouvelle `burstKey`). */
-export function Confetti({ burstKey, count = 70 }) {
+export function Confetti({ burstKey, count = LITE ? 28 : 70 }) {
   const reduced = useReducedMotion();
   const pieces = useMemo(
     () =>
@@ -97,7 +98,7 @@ export function useTilt(max = 8) {
   const my = useMotionValue(0.5);
   const rx = useSpring(useTransform(my, [0, 1], [max, -max]), { stiffness: 220, damping: 18 });
   const ry = useSpring(useTransform(mx, [0, 1], [-max, max]), { stiffness: 220, damping: 18 });
-  if (reduced) return {};
+  if (reduced || LITE) return {};
   return {
     style: { rotateX: rx, rotateY: ry, transformPerspective: 800 },
     onPointerMove: (e) => {
@@ -141,7 +142,7 @@ export function Sparkles({ count = 14 }) {
       })),
     [count],
   );
-  if (reduced) return null;
+  if (reduced || LITE) return null;
   return (
     <span aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       {dots.map((d) => (

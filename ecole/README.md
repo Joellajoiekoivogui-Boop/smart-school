@@ -54,6 +54,41 @@ pour montrer le changement d’enfant. Tout compte créé par l’administration
 > Pour une mise en production multi-utilisateurs, ces données doivent passer
 > par une API et une base de données (voir la feuille de route).
 
+## Guinée 🇬🇳
+
+- **Système scolaire guinéen** : collège de la **7e à la 10e année** (la 10e
+  année prépare le **BEPC**), calendrier avec les jours fériés guinéens et
+  l’examen du BEPC.
+- **Documents officiels** : bulletins et reçus portent l’en-tête « République
+  de Guinée — Travail, Justice, Solidarité », le ministère (MEPUA), l’IRE et le
+  drapeau.
+- **Monnaie et téléphones** : montants en GNF ; paiement Orange Money / MTN
+  MoMo avec des numéros guinéens (+224, 9 chiffres commençant par 6).
+- **Assistant IA** : réponses adaptées au programme guinéen.
+- Les données déjà enregistrées sont mises à niveau automatiquement (6e → 7e
+  année, 5e → 8e… sauf les noms personnalisés).
+
+## Compatible avec tous les téléphones
+
+N°1 fonctionne sur les téléphones récents **et anciens** : iPhone sous
+**iOS 12** et plus, Android avec **Chrome 64** et plus, Samsung Internet 9+.
+
+- Next.js 15 et Tailwind CSS v3 (Next 16 et Tailwind v4 exigent iOS 16.4 /
+  Chrome 111) ; cibles déclarées dans `browserslist` (`package.json`) ; le
+  code produit est vérifié ES2018 (`npx es-check es2018 'out/_next/static/chunks/**/*.js'`).
+- `public/legacy-polyfills.js` (intégré en tête de page) complète les anciens
+  navigateurs : `globalThis`, `AbortController`, `queueMicrotask`,
+  `IntersectionObserver`, `ResizeObserver` ; replis pour `structuredClone` et
+  la propriété CSS `inset` (plugin PostCSS dans `scripts/`).
+- **Mode léger automatique** sur les téléphones modestes (≤ 2 Go de mémoire)
+  ou avec l’économiseur de données : les effets coûteux (flous, halos,
+  étincelles, 3D) sont retirés, tout le reste fonctionne.
+- Écrans de 320 px à la tablette, encoches (iPhone X+), fenêtres en feuille
+  coulissante sur mobile, champs sans zoom automatique sur iPhone.
+
+> Opera Mini en mode « extrême » n’exécute pas les applications web : utiliser
+> Chrome, Samsung Internet, Firefox ou Safari.
+
 ## Les quatre espaces
 
 **👨‍🎓 Élève** — tableau de bord avec priorités du jour, **assistant IA**
@@ -154,12 +189,11 @@ Tous les jetons sont dans `app/globals.css`.
 
 ### Tailwind CSS
 
-Tailwind CSS v4 (`@tailwindcss/postcss`) est branché sur la charte : les
-couleurs, polices et animations sont déclarées dans `@theme`
-(`app/globals.css`) et utilisables en classes (`bg-brand`, `text-navy`,
+Tailwind CSS v3 est branché sur la charte : les
+couleurs, polices et animations sont déclarées dans `tailwind.config.js` et utilisables en classes (`bg-brand`, `text-navy`,
 `font-display`, `shadow-glow`, `animate-float`, `animate-gradient`,
-`animate-shine`…). Les styles de l’application sont dans la couche
-`components`, ce qui permet de les compléter avec des utilitaires Tailwind.
+`animate-shine`…). Les styles de l’application sont placés avant les
+utilitaires Tailwind, qui peuvent donc les compléter ou les surcharger.
 La page de connexion et les bandeaux d’accueil sont écrits en Tailwind.
 
 ### Animations (Motion, ex-Framer Motion)

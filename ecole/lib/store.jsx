@@ -23,6 +23,15 @@ const IDLE_MS = 30 * 60 * 1000;
 
 const StoreContext = createContext(null);
 
+/**
+ * Copie profonde de l'état. `structuredClone` n'existe qu'à partir d'iOS 15.4
+ * / Chrome 98 : repli JSON (l'état ne contient que des données sérialisables).
+ */
+function deepClone(value) {
+  if (typeof structuredClone === 'function') return structuredClone(value);
+  return JSON.parse(JSON.stringify(value));
+}
+
 function load(key) {
   try {
     const raw = localStorage.getItem(key);
@@ -79,7 +88,7 @@ export function StoreProvider({ children }) {
     (action, payload = {}, successMessage) => {
       const current = stateRef.current;
       const actor = current.users.find((u) => u.id === userId);
-      const draft = structuredClone(current);
+      const draft = deepClone(current);
       try {
         const result = action(draft, actor, payload);
         appendAudit(draft, actor, action, payload);

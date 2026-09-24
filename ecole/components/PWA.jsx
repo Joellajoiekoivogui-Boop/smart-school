@@ -1,10 +1,12 @@
 'use client';
 /** Enregistre le service worker (mode hors connexion) et signale la perte de connexion. */
 import { useEffect, useState } from 'react';
+import { LITE } from './motion';
 
 export default function PWA() {
   const [offline, setOffline] = useState(false);
   useEffect(() => {
+    if (LITE) document.documentElement.classList.add('lite');
     if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }

@@ -3,7 +3,7 @@ import { useId, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { Sparkles, spotlightHandlers, useTilt } from './fx';
 import Icon from './Icon';
-import { AnimatedValue, EASE, SPRING, itemVariants, listItemVariants, listVariants } from './motion';
+import { AnimatedValue, EASE, SPRING, inViewProps, itemVariants, listItemVariants, listVariants } from './motion';
 import { formatDate, formatNote } from '@/lib/compute';
 
 export function PageHead({ title, subtitle, children }) {
@@ -23,9 +23,7 @@ export function Card({ title, action, children, className = '', flush = false })
     <motion.section
       className={`card ${flush ? 'flush' : ''} ${className}`}
       variants={itemVariants}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, amount: 0.08 }}
+      {...inViewProps(0.08)}
       {...spotlightHandlers()}
     >
       <span aria-hidden className="spotlight spotlight-px" />
@@ -454,7 +452,7 @@ export function Wave() {
 export function Stagger({ as = 'div', className, children }) {
   const Tag = motion[as];
   return (
-    <Tag className={className} variants={listVariants} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.1 }}>
+    <Tag className={className} variants={listVariants} {...inViewProps(0.1)}>
       {children}
     </Tag>
   );

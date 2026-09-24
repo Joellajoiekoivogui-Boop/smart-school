@@ -629,6 +629,27 @@ export function BulletinModal({ state, studentId, termId, onClose }) {
   );
 }
 
+/** En-tête officiel des documents scolaires guinéens (bulletins, reçus). */
+export function OfficialHeader({ school }) {
+  return (
+    <div className="official-head">
+      <div>
+        <div className="strong">{(school.ministry || '').toUpperCase()}</div>
+        <div className="tiny">{school.region}</div>
+      </div>
+      <div className="official-flag" aria-label="Drapeau de la Guinée">
+        <span style={{ background: '#CE1126' }} />
+        <span style={{ background: '#FCD116' }} />
+        <span style={{ background: '#009460' }} />
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <div className="strong">{(school.country || 'République de Guinée').toUpperCase()}</div>
+        <div className="tiny">{school.motto}</div>
+      </div>
+    </div>
+  );
+}
+
 /** Contenu imprimable d'un bulletin (utilisé seul ou en lot pour toute une classe). */
 export function BulletinSheet({ state, studentId, termId }) {
   const rc = reportCard(state, studentId, termId);
@@ -636,11 +657,12 @@ export function BulletinSheet({ state, studentId, termId }) {
   const published = state.bulletinsPublished?.[`${rc.cls.id}-${termId}`];
   return (
     <div className="bulletin">
+      <OfficialHeader school={state.school} />
       <div className="bulletin-head">
         <div>
           <h2>{state.school.name}</h2>
           <div className="small">
-            {state.school.city} · Année scolaire {state.school.year}
+            {[state.school.commune, state.school.city].filter(Boolean).join(', ')} · Année scolaire {state.school.year}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
@@ -1253,10 +1275,11 @@ export function ReceiptModal({ state, payment, onClose }) {
       }
     >
       <div className="bulletin print-area">
+        <OfficialHeader school={state.school} />
         <div className="bulletin-head">
           <div>
             <h2>{state.school.name}</h2>
-            <div className="small">{state.school.city}</div>
+            <div className="small">{[state.school.commune, state.school.city].filter(Boolean).join(', ')} — Guinée</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div className="strong">REÇU DE PAIEMENT</div>
@@ -1436,7 +1459,7 @@ function OnlinePaymentModal({ state, run, studentId, onClose, onPaid }) {
             </button>
             <button
               className="btn btn-primary"
-              disabled={!amount || form.phone.replace(/\D/g, '').length < 9 || amount > pay.balance}
+              disabled={!amount || !A.normalizeGuineaMobile(form.phone) || amount > pay.balance}
               onClick={() => {
                 setError('');
                 setStep(2);
@@ -1475,8 +1498,18 @@ function OnlinePaymentModal({ state, run, studentId, onClose, onPaid }) {
             <Field label="Montant (GNF)">
               <input className="input num" inputMode="numeric" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value.replace(/\D/g, '') })} />
             </Field>
-            <Field label={`Numéro ${form.method}`}>
-              <input className="input" inputMode="tel" placeholder="+224 6.. .. .. .." value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <Field label={`Numéro ${form.method} (Guinée)`}>
+              <div className="phone-field">
+                <span className="phone-prefix">🇬🇳 +224</span>
+                <input
+                  className="input"
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  placeholder="6xx xx xx xx"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: A.formatGuineaPhone(e.target.value.replace(/^\+?224\s*/, '')) })}
+                />
+              </div>
             </Field>
           </div>
           {amount > pay.balance && <p className="small" style={{ color: 'var(--red-700)' }}>Le montant dépasse le reste à payer.</p>}
@@ -1495,7 +1528,7 @@ function OnlinePaymentModal({ state, run, studentId, onClose, onPaid }) {
           <div className="alert alert-orange small">
             <Icon name="phone" size={16} />
             <div>
-              Un code de confirmation a été envoyé au <strong>{form.phone}</strong> pour un paiement de <strong>{formatMoney(amount)}</strong> via {form.method}.
+              Un code de confirmation a été envoyé au <strong>+224 {form.phone}</strong> pour un paiement de <strong>{formatMoney(amount)}</strong> via {form.method}.
               <div className="tiny" style={{ marginTop: 4 }}>
                 Démonstration : le code est <strong className="num">{code}</strong>.
               </div>

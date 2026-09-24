@@ -77,10 +77,17 @@ export function hashPassword(password, salt) {
   return out;
 }
 
+/** Accès à `crypto` sans `globalThis` (absent avant iOS 12.2 / Chrome 71). */
+export function cryptoApi() {
+  if (typeof self !== 'undefined' && self.crypto) return self.crypto;
+  if (typeof window !== 'undefined' && window.crypto) return window.crypto;
+  return globalThis.crypto; // Node (tests)
+}
+
 export function makeSalt(seed) {
   if (seed != null) return sha256(`n1-salt-${seed}`).slice(0, 16);
   const bytes = new Uint8Array(8);
-  globalThis.crypto.getRandomValues(bytes);
+  cryptoApi().getRandomValues(bytes);
   return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 

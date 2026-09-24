@@ -88,18 +88,19 @@ const TOPICS = {
   info: ['Algorithmique', 'Bureautique', 'Internet et sécurité', 'Programmation'],
 };
 
+// Collège guinéen : 7e à 10e année (la 10e année est la classe d'examen du BEPC).
 const LEVELS = [
-  { id: 'n6', name: '6e', annualFee: 1500000 },
-  { id: 'n5', name: '5e', annualFee: 1600000 },
-  { id: 'n4', name: '4e', annualFee: 1750000 },
-  { id: 'n3', name: '3e', annualFee: 1900000 },
+  { id: 'n6', name: '7e année', annualFee: 1500000 },
+  { id: 'n5', name: '8e année', annualFee: 1600000 },
+  { id: 'n4', name: '9e année', annualFee: 1750000 },
+  { id: 'n3', name: '10e année', annualFee: 1900000 },
 ];
 
 const CLASSES = [
-  { id: 'c6a', name: '6e A', levelId: 'n6', room: 'Salle 1', headTeacherId: 't5' },
-  { id: 'c5a', name: '5e A', levelId: 'n5', room: 'Salle 2', headTeacherId: 't1' },
-  { id: 'c4a', name: '4e A', levelId: 'n4', room: 'Salle 3', headTeacherId: 't2' },
-  { id: 'c3a', name: '3e A', levelId: 'n3', room: 'Salle 4', headTeacherId: 't4' },
+  { id: 'c6a', name: '7e A', levelId: 'n6', room: 'Salle 1', headTeacherId: 't5' },
+  { id: 'c5a', name: '8e A', levelId: 'n5', room: 'Salle 2', headTeacherId: 't1' },
+  { id: 'c4a', name: '9e A', levelId: 'n4', room: 'Salle 3', headTeacherId: 't2' },
+  { id: 'c3a', name: '10e A', levelId: 'n3', room: 'Salle 4', headTeacherId: 't4' },
 ];
 
 const TEACHERS = [
@@ -292,6 +293,10 @@ export function buildSeed(now = new Date()) {
     { id: 'cal3', date: toISODate(addDays(today, 23)), title: 'Compositions du 1er trimestre (début)', type: 'examen' },
     { id: 'cal4', date: toISODate(new Date(schoolYearStart.getFullYear(), 9, 2)), title: 'Fête de l’Indépendance (férié)', type: 'ferie' },
     { id: 'cal5', date: terms[0].end, title: 'Fin du 1er trimestre', type: 'evenement' },
+    { id: 'cal6', date: toISODate(new Date(schoolYearStart.getFullYear(), 10, 1)), title: 'Toussaint (férié)', type: 'ferie' },
+    { id: 'cal7', date: toISODate(new Date(schoolYearStart.getFullYear() + 1, 4, 1)), title: 'Fête du Travail (férié)', type: 'ferie' },
+    { id: 'cal8', date: toISODate(new Date(schoolYearStart.getFullYear() + 1, 4, 25)), title: 'Journée de l’Afrique (férié)', type: 'ferie' },
+    { id: 'cal9', date: toISODate(new Date(schoolYearStart.getFullYear() + 1, 5, 16)), title: 'Examen du BEPC (10e année)', type: 'examen' },
   ];
 
   // ---------- Évaluations & notes ----------
@@ -551,6 +556,11 @@ export function buildSeed(now = new Date()) {
     school: {
       name: 'Groupe Scolaire N°1',
       city: 'Conakry',
+      commune: 'Ratoma',
+      country: 'République de Guinée',
+      motto: 'Travail – Justice – Solidarité',
+      ministry: 'Ministère de l’Enseignement Pré-Universitaire et de l’Alphabétisation',
+      region: 'IRE de Conakry',
       year: yearLabel,
       currentTermId: termOf(toISODate(today)),
       currency: 'GNF',

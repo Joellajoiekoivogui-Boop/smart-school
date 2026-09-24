@@ -9,7 +9,7 @@
  */
 import { hashPassword, makeSalt } from './crypto.js';
 
-export const STATE_VERSION = 2;
+export const STATE_VERSION = 3;
 
 function iso(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -178,6 +178,7 @@ export function extendSeed(state, now = new Date()) {
     sub.history = sub.history || [{ at: sub.submittedAt, event: 'depot' }];
   }
 
+  localizeGuinea(s);
   s.bulletinsPublished = s.bulletinsPublished || {};
   s.alertsOutbox = s.alertsOutbox || [];
   s.auditLog = s.auditLog || [];
@@ -186,10 +187,36 @@ export function extendSeed(state, now = new Date()) {
   return s;
 }
 
+// Noms du système français remplacés par ceux du collège guinéen
+// (uniquement s'ils n'ont pas été personnalisés par l'établissement).
+const GUINEA_LEVELS = { '6e': '7e année', '5e': '8e année', '4e': '9e année', '3e': '10e année' };
+const GUINEA_CLASSES = { '6e A': '7e A', '5e A': '8e A', '4e A': '9e A', '3e A': '10e A' };
+
+/** Identité guinéenne de l'établissement (v3). */
+export function localizeGuinea(s) {
+  for (const l of s.levels) if (GUINEA_LEVELS[l.name]) l.name = GUINEA_LEVELS[l.name];
+  for (const c of s.classes) if (GUINEA_CLASSES[c.name]) c.name = GUINEA_CLASSES[c.name];
+  s.school.country = s.school.country || 'République de Guinée';
+  s.school.motto = s.school.motto || 'Travail – Justice – Solidarité';
+  s.school.ministry = s.school.ministry || 'Ministère de l’Enseignement Pré-Universitaire et de l’Alphabétisation';
+  s.school.region = s.school.region || 'IRE de Conakry';
+  s.school.commune = s.school.commune || 'Ratoma';
+  if (!s.calendar.some((e) => /BEPC/.test(e.title))) {
+    const y = Number(String(s.school.year).slice(0, 4)) + 1;
+    s.calendar.push({ id: 'cal-bepc', date: `${y}-06-16`, title: 'Examen du BEPC (10e année)', type: 'examen' });
+  }
+  return s;
+}
+
 /** Met à niveau des données enregistrées par une version précédente. */
 export function migrateState(stored, now = new Date()) {
   if (!stored || typeof stored !== 'object') return null;
   if (stored.version === STATE_VERSION) return stored;
   if (stored.version === 1) return extendSeed(stored, now);
+  if (stored.version === 2) {
+    localizeGuinea(stored);
+    stored.version = STATE_VERSION;
+    return stored;
+  }
   return null;
 }

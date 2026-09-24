@@ -163,13 +163,13 @@ export function assistantContext(state, studentId) {
 export async function remoteAnswer(messages, context, mode) {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 45000);
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), 45000) : null;
     const res = await fetch('/api/assistant', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages, context, mode }),
-      signal: controller.signal,
+      ...(controller ? { signal: controller.signal } : {}),
     });
     clearTimeout(timer);
     if (!res.ok) return null;
