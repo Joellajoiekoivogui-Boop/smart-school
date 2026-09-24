@@ -190,3 +190,30 @@ test('Guinée : classes 7e–10e année, migration v2 → v3, numéros +224', ()
   assert.equal(A.normalizeGuineaMobile('0612345678'), null);
   assert.equal(A.formatGuineaPhone('620123456'), '620 12 34 56');
 });
+
+test('photos de profil : élève, parent, enseignant, administration', () => {
+  const s = fresh();
+  const img = 'data:image/jpeg;base64,' + 'A'.repeat(200);
+  const eleve = userBy(s, 'mohamed.camara@n1.school');
+  const parent = userBy(s, 'parent.camara@n1.school');
+  const prof = userBy(s, 'k.diallo@n1.school');
+  const admin = userBy(s, 'admin@n1.school');
+  A.setPhoto(s, eleve, { kind: 'student', id: 's1', dataUrl: img });
+  assert.equal(s.students.find((x) => x.id === 's1').photo, img);
+  assert.throws(() => A.setPhoto(s, eleve, { kind: 'student', id: 's2', dataUrl: img }), /ne pouvez pas/);
+  A.setPhoto(s, parent, { kind: 'student', id: 's9', dataUrl: img });
+  assert.throws(() => A.setPhoto(s, parent, { kind: 'student', id: 's2', dataUrl: img }));
+  A.setPhoto(s, prof, { kind: 'teacher', id: 't1', dataUrl: img });
+  assert.throws(() => A.setPhoto(s, prof, { kind: 'student', id: 's1', dataUrl: img }));
+  assert.throws(() => A.setPhoto(s, admin, { kind: 'teacher', id: 't2', dataUrl: 'data:text/html;base64,xx' }), /Format/);
+  A.setPhoto(s, admin, { kind: 'student', id: 's1', dataUrl: null });
+  assert.equal(s.students.find((x) => x.id === 's1').photo, undefined);
+});
+
+test('portraits illustrés : valides pour tous les élèves et enseignants', async () => {
+  const { illustratedAvatar, photoOf } = await import('../lib/avatars.js');
+  const s = fresh();
+  for (const st of s.students) assert.match(photoOf(st), /^data:image\/svg\+xml/);
+  for (const t of s.teachers) assert.ok(!photoOf(t, 'teacher').includes('undefined'));
+  for (let i = 0; i < 300; i++) assert.ok(!illustratedAvatar(`x${i}`, i % 2 ? 'F' : 'M').includes('undefined'));
+});

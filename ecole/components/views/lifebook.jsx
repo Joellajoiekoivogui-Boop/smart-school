@@ -2,6 +2,7 @@
 /** Fiche de vie scolaire : dossier longitudinal de l'élève. */
 import { useState } from 'react';
 import Icon from '../Icon';
+import { photoOf, userPhoto } from '@/lib/avatars';
 import { Avatar, Badge, Card, Empty, Field, PageHead, Select, Stat } from '../ui';
 import { attendanceStats, byId, formatDate, formatNote, fullName, generalAverage, progressionPercent, studentClass, timeAgo } from '@/lib/compute';
 import { can, canAccessStudent } from '@/lib/permissions';
@@ -41,7 +42,7 @@ export function Lifebook({ state, user, run, studentId, embedded = false }) {
       )}
       <div className="print-area">
         <div className="card row" style={{ marginBottom: 18 }}>
-          <Avatar name={fullName(s)} size="lg" />
+          <Avatar src={photoOf(s)} name={fullName(s)} size="lg" />
           <div style={{ flex: 1, minWidth: 200 }}>
             <h2>{fullName(s)}</h2>
             <div className="small muted">

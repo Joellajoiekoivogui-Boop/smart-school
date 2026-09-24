@@ -1,8 +1,9 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Icon from '../Icon';
+import { photoOf, userPhoto } from '@/lib/avatars';
 import { Reveal } from '../motion';
-import { Avatar, Badge, Bar, Card, Empty, Field, Grade, HBars, Modal, PageHead, Select, Stat, Tabs, Hero, Wave } from '../ui';
+import { Avatar, Badge, Bar, Card, Empty, Field, Grade, HBars, Modal, PageHead, Select, Stat, Tabs, Hero, Wave, PhotoPicker } from '../ui';
 import {
   attendanceStats,
   byId,
@@ -122,7 +123,7 @@ export function AdminDashboard({ state, user, go }) {
                 const s = byId(state.students, a.studentId);
                 return (
                   <div className="list-item" key={a.id}>
-                    <Avatar name={fullName(s)} />
+                    <Avatar src={photoOf(s)} name={fullName(s)} />
                     <div className="grow">
                       <div className="strong small">{fullName(s)}</div>
                       <div className="tiny muted">{studentClass(state, s)?.name}</div>
@@ -214,7 +215,7 @@ export function AdminStudentsView({ state, user, run, params, go }) {
                   <tr key={s.id} className="clickable" onClick={() => go(`eleves/${s.id}`)}>
                     <td>
                       <div className="row" style={{ flexWrap: 'nowrap' }}>
-                        <Avatar name={fullName(s)} />
+                        <Avatar src={photoOf(s)} name={fullName(s)} />
                         <span className="strong">{fullName(s)}</span>
                       </div>
                     </td>
@@ -303,6 +304,16 @@ function StudentModal({ state, run, student, onClose, onCreated }) {
         </>
       }
     >
+      {!isNew && (
+        <div style={{ marginBottom: 16 }}>
+          <PhotoPicker
+            src={photoOf(state.students.find((x) => x.id === student.id))}
+            name={fullName(student)}
+            hasPhoto={Boolean(state.students.find((x) => x.id === student.id)?.photo)}
+            onChange={(dataUrl) => run(A.setPhoto, { kind: 'student', id: student.id, dataUrl }, dataUrl ? '🎉 Photo enregistrée !' : 'Photo retirée.')}
+          />
+        </div>
+      )}
       <div className="form-grid">
         <Field label="Prénom">
           <input className="input" value={form.firstName} onChange={set('firstName')} />
@@ -413,7 +424,7 @@ export function AdminTeachersView({ state, run }) {
           return (
             <Card key={t.id}>
               <div className="row">
-                <Avatar name={fullName(t)} size="lg" />
+                <Avatar src={photoOf(t, 'teacher')} name={fullName(t)} size="lg" />
                 <div style={{ minWidth: 0 }}>
                   <h3>{teacherName(state, t.id)}</h3>
                   <div className="small muted num">{t.phone}</div>
@@ -480,6 +491,16 @@ function TeacherModal({ state, run, teacher, onClose, onCreated }) {
         </>
       }
     >
+      {teacher.id && (
+        <div style={{ marginBottom: 16 }}>
+          <PhotoPicker
+            src={photoOf(state.teachers.find((x) => x.id === teacher.id), 'teacher')}
+            name={fullName(teacher)}
+            hasPhoto={Boolean(state.teachers.find((x) => x.id === teacher.id)?.photo)}
+            onChange={(dataUrl) => run(A.setPhoto, { kind: 'teacher', id: teacher.id, dataUrl }, dataUrl ? '🎉 Photo enregistrée !' : 'Photo retirée.')}
+          />
+        </div>
+      )}
       <div className="form-grid">
         <Field label="Prénom">
           <input className="input" value={form.firstName} onChange={set('firstName')} />
@@ -1180,7 +1201,7 @@ function PendingAuthorizations({ state, run }) {
         const s = byId(state.students, a.studentId);
         return (
           <div className="list-item" key={a.id}>
-            <Avatar name={fullName(s)} />
+            <Avatar src={photoOf(s)} name={fullName(s)} />
             <div className="grow">
               <div className="strong small">
                 {fullName(s)} · {studentClass(state, s)?.name}

@@ -2,6 +2,7 @@
 import { useId, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { Sparkles, spotlightHandlers, useTilt } from './fx';
+import { preparePhoto } from '@/lib/avatars';
 import Icon from './Icon';
 import { AnimatedValue, EASE, SPRING, inViewProps, itemVariants, listItemVariants, listVariants } from './motion';
 import { formatDate, formatNote } from '@/lib/compute';
@@ -70,7 +71,11 @@ export function Badge({ tone = 'gray', children, icon }) {
   );
 }
 
-export function Avatar({ name, size, dark }) {
+export function Avatar({ name, size, dark, src }) {
+  const cls = `avatar ${size === 'lg' ? 'avatar-lg' : size === 'xl' ? 'avatar-xl' : ''} ${dark ? 'avatar-dark' : ''}`;
+  if (src) {
+    return <img className={`${cls} avatar-img`} src={src} alt={name ? `Photo de ${name}` : ''} loading="lazy" decoding="async" draggable={false} />;
+  }
   const initials = (name || '?')
     .replace(/^(M\.|Mme)\s+/, '')
     .split(/\s+/)
@@ -78,7 +83,53 @@ export function Avatar({ name, size, dark }) {
     .slice(0, 2)
     .join('')
     .toUpperCase();
-  return <span className={`avatar ${size === 'lg' ? 'avatar-lg' : ''} ${dark ? 'avatar-dark' : ''}`}>{initials}</span>;
+  return <span className={cls}>{initials}</span>;
+}
+
+/**
+ * Choix d'une photo de profil : appareil photo du téléphone ou galerie.
+ * L'image est recadrée et allégée avant d'être transmise à `onChange`.
+ */
+export function PhotoPicker({ src, name, onChange, hasPhoto }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const handle = async (file) => {
+    if (!file) return;
+    setBusy(true);
+    setError('');
+    try {
+      onChange(await preparePhoto(file));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="photo-picker">
+      <motion.div className="photo-frame" whileHover={{ scale: 1.04, rotate: -2 }} transition={SPRING}>
+        <Avatar src={src} name={name} size="xl" />
+        {busy && <span className="photo-busy" aria-label="Traitement…" />}
+      </motion.div>
+      <div className="stack" style={{ gap: 8, flex: 1, minWidth: 180 }}>
+        <label className="btn btn-primary btn-sm">
+          <Icon name="camera" size={15} /> Prendre une photo
+          <input type="file" accept="image/*" capture="user" hidden onChange={(e) => handle(e.target.files?.[0])} />
+        </label>
+        <label className="btn btn-sm">
+          <Icon name="upload" size={15} /> Choisir dans la galerie
+          <input type="file" accept="image/*" hidden onChange={(e) => handle(e.target.files?.[0])} />
+        </label>
+        {hasPhoto && (
+          <button type="button" className="btn btn-sm btn-ghost" onClick={() => onChange(null)}>
+            Retirer la photo
+          </button>
+        )}
+        {error && <span className="tiny" style={{ color: 'var(--red-700)' }}>{error}</span>}
+        {!hasPhoto && <span className="tiny muted">Portrait illustré en attendant une vraie photo.</span>}
+      </div>
+    </div>
+  );
 }
 
 export function Empty({ children = 'Rien à afficher pour le moment.' }) {

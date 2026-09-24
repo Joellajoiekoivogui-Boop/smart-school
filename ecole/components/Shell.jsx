@@ -8,6 +8,7 @@ import { ROLES } from '@/lib/permissions';
 import { childrenOf, notificationsFor, studentClass } from '@/lib/compute';
 import { motion } from 'motion/react';
 import Icon from './Icon';
+import { photoOf, userPhoto } from '@/lib/avatars';
 import { Page } from './motion';
 import { RippleLayer, ScrollProgress, Splash } from './fx';
 import { Avatar } from './ui';
@@ -130,7 +131,7 @@ export default function Shell({ role, segments }) {
         </nav>
         <div className="sidebar-foot">
           <div className="who">
-            <Avatar name={user.name} dark />
+            <Avatar src={userPhoto(state, user)} name={user.name} dark />
             <div style={{ minWidth: 0, flex: 1 }}>
               <div className="who-name ellipsis">{user.name}</div>
               <div className="who-role">{user.title || ROLES[role].label}</div>

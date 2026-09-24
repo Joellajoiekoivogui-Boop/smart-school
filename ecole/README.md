@@ -89,6 +89,21 @@ N°1 fonctionne sur les téléphones récents **et anciens** : iPhone sous
 > Opera Mini en mode « extrême » n’exécute pas les applications web : utiliser
 > Chrome, Samsung Internet, Firefox ou Safari.
 
+## Photos de profil
+
+Chaque élève et chaque enseignant a sa photo sur son profil, dans les menus,
+les listes, la messagerie et le bulletin.
+
+- **Qui peut la changer ?** L’élève ou l’enseignant lui-même (*Mon compte*),
+  le parent pour ses enfants (*Mes enfants*), l’administration (fiches élève et
+  enseignant).
+- « Prendre une photo » ouvre la caméra frontale du téléphone ; « Choisir dans
+  la galerie » ; « Retirer la photo ».
+- La photo est recadrée en carré et réduite (256 px, JPEG ≈ 5 à 30 Ko) avant
+  d’être enregistrée ; chaque modification est tracée dans le journal d’audit.
+- Sans photo, un portrait illustré propre à chaque personne est affiché
+  (`lib/avatars.js`, fonctionne hors connexion).
+
 ## Les quatre espaces
 
 **👨‍🎓 Élève** — tableau de bord avec priorités du jour, **assistant IA**

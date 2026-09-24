@@ -1,8 +1,9 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Icon from '../Icon';
+import { photoOf } from '@/lib/avatars';
 import { Reveal, motion, EASE } from '../motion';
-import { Badge, Bar, Card, Empty, LineChart, PageHead, Stat, Hero, Wave, Stagger, StaggerItem } from '../ui';
+import { Badge, Bar, Card, Empty, LineChart, PageHead, Stat, Hero, Wave, Stagger, StaggerItem, Avatar } from '../ui';
 import {
   attendanceStats,
   byId,
@@ -17,6 +18,7 @@ import {
   studentClass,
   teacherName,
   timeAgo,
+  fullName,
 } from '@/lib/compute';
 import { TIME_SLOTS } from '@/lib/seed';
 import * as A from '@/lib/actions';
@@ -67,11 +69,16 @@ export function EleveDashboard({ state, user, go }) {
   return (
     <>
       <Hero>
-        <div>
+        <div className="row" style={{ gap: 16, flexWrap: 'nowrap' }}>
+          <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 14, delay: 0.15 }} whileHover={{ scale: 1.08 }}>
+            <Avatar src={photoOf(student)} name={fullName(student)} size="lg" dark />
+          </motion.div>
+          <div>
           <h1>Bonjour {student.firstName} <Wave /></h1>
           <p>
             Voici votre résumé scolaire — {cls.name} · {formatDate(todayISO(), { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
+          </div>
         </div>
         <button className="btn btn-primary" onClick={() => go('entrainement')}>
           <Icon name="brain" size={16} /> S’entraîner
@@ -522,6 +529,7 @@ export function TrainingView({ state, user, run }) {
         })}
       </div>
       <Card className="mt" title="Mes dernières séances" flush>
+        <div className="table-wrap">
         <table className="table">
           <thead>
             <tr>
@@ -546,6 +554,7 @@ export function TrainingView({ state, user, run }) {
             ))}
           </tbody>
         </table>
+        </div>
         {!attempts.length && <Empty>Aucune séance pour le moment.</Empty>}
       </Card>
     </>

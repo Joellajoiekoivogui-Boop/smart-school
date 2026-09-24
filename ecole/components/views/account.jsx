@@ -2,13 +2,16 @@
 /** Compte (mot de passe) pour tous les rôles, et Sécurité & journal pour l'administration. */
 import { useMemo, useState } from 'react';
 import Icon from '../Icon';
-import { Badge, Card, Empty, Field, Modal, PageHead, Select, Stat, Tabs } from '../ui';
+import { Badge, Card, Empty, Field, Modal, PageHead, PhotoPicker, Select, Stat, Tabs } from '../ui';
+import { photoOf } from '@/lib/avatars';
 import { byId, formatDate, timeAgo } from '@/lib/compute';
 import { PERMISSIONS, ROLES } from '@/lib/permissions';
 import { downloadCSV } from '@/lib/csv';
 import * as A from '@/lib/actions';
 
-export function AccountView({ user, run, go, role }) {
+export function AccountView({ state, user, run, go, role }) {
+  const person = role === 'eleve' ? byId(state.students, user.personId) : role === 'enseignant' ? byId(state.teachers, user.personId) : null;
+  const kind = role === 'eleve' ? 'student' : 'teacher';
   const [form, setForm] = useState({ current: '', next: '', confirm: '' });
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const submit = (e) => {
@@ -35,6 +38,17 @@ export function AccountView({ user, run, go, role }) {
             <strong>Mot de passe provisoire.</strong> Choisissez votre propre mot de passe pour continuer à utiliser N°1 en toute sécurité.
           </div>
         </div>
+      )}
+      {person && (
+        <Card title="Ma photo de profil" className="mb-card">
+          <PhotoPicker
+            src={photoOf(person, kind)}
+            name={user.name}
+            hasPhoto={Boolean(person.photo)}
+            onChange={(dataUrl) => run(A.setPhoto, { kind, id: person.id, dataUrl }, dataUrl ? '🎉 Photo de profil enregistrée !' : 'Photo retirée.')}
+          />
+          <p className="tiny muted mt">Visible par tes enseignants, l’administration et ta famille. Choisis une photo nette, de face, sur fond clair.</p>
+        </Card>
       )}
       <div className="grid g-2">
         <Card title="Changer mon mot de passe">

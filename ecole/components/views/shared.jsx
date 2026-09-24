@@ -5,6 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '../Icon';
+import { photoOf, userPhoto } from '@/lib/avatars';
 import { Avatar, Badge, Bar, Card, Empty, Field, Grade, HBars, LineChart, Modal, PageHead, Ring, Select, Stagger, StaggerItem, Stat, Tabs } from '../ui';
 import {
   attendanceStats,
@@ -322,7 +323,7 @@ export function MessagesView({ state, user, run, params, go }) {
               const unread = state.messages.filter((m) => m.from === p.id && m.to === user.id && !m.read).length;
               return (
                 <button key={p.id} className={`chat-contact ${p.id === activeId ? 'active' : ''}`} onClick={() => go(`messages/${p.id}`)}>
-                  <Avatar name={p.name} />
+                  <Avatar src={userPhoto(state, p)} name={p.name} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div className="row between" style={{ gap: 6, flexWrap: 'nowrap' }}>
                       <span className="strong ellipsis small">{p.name}</span>
@@ -340,7 +341,7 @@ export function MessagesView({ state, user, run, params, go }) {
               <>
                 <div className="row between" style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
                   <div className="row">
-                    <Avatar name={active.name} />
+                    <Avatar src={userPhoto(state, active)} name={active.name} />
                     <div>
                       <div className="strong">{active.name}</div>
                       <div className="tiny muted">{roleLabel(active)}</div>
@@ -672,8 +673,11 @@ export function BulletinSheet({ state, studentId, termId }) {
       </div>
       <div className="row between mt">
         <div>
-          <div className="strong" style={{ fontSize: 16 }}>
-            {fullName(rc.student)}
+          <div className="row" style={{ gap: 10, flexWrap: 'nowrap' }}>
+            <img className="bulletin-photo" src={photoOf(rc.student)} alt="" />
+            <div className="strong" style={{ fontSize: 16 }}>
+              {fullName(rc.student)}
+            </div>
           </div>
           <div className="small">
             Matricule {rc.student.matricule} · Né(e) le {formatDate(rc.student.birthDate, { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -1561,7 +1565,7 @@ export function TeachersView({ state, user, studentId, go }) {
           return (
             <Card key={t.id}>
               <div className="row">
-                <Avatar name={fullName(t)} size="lg" />
+                <Avatar src={photoOf(t, 'teacher')} name={fullName(t)} size="lg" />
                 <div>
                   <h3>{teacherName(state, t.id)}</h3>
                   <div className="small muted">{t.subjectIds.map((id) => byId(state.subjects, id)?.name).join(' · ')}</div>

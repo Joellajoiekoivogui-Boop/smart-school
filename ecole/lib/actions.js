@@ -926,3 +926,33 @@ export function appendAudit(draft, user, action, payload) {
   draft.auditLog.unshift({ id: uid('log'), userId: user.id, label, detail, at: new Date().toISOString() });
   if (draft.auditLog.length > 1000) draft.auditLog.length = 1000;
 }
+
+// ================================================================ Photos de profil
+
+const MAX_PHOTO_CHARS = 400 * 1024; // ≈ 300 Ko d'image
+
+/**
+ * Enregistre (ou retire, si `dataUrl` est vide) la photo d'un élève ou d'un
+ * enseignant. Autorisés : la personne elle-même, un parent de l'élève, et
+ * l'administration.
+ */
+export function setPhoto(draft, user, { kind, id, dataUrl }) {
+  if (!user) throw new ForbiddenError();
+  const list = kind === 'teacher' ? draft.teachers : kind === 'student' ? draft.students : null;
+  const person = list && byId(list, id);
+  if (!person) throw new Error('Personne introuvable.');
+  const self = (kind === 'student' && user.role === 'eleve' && user.personId === id) || (kind === 'teacher' && user.role === 'enseignant' && user.personId === id);
+  const parent = kind === 'student' && user.role === 'parent' && canAccessStudent(draft, user, id);
+  const admin = user.role === 'admin';
+  if (!self && !parent && !admin) throw new ForbiddenError('Vous ne pouvez pas modifier cette photo.');
+  if (!dataUrl) {
+    delete person.photo;
+    return person;
+  }
+  if (!/^data:image\/(jpeg|png|webp);base64,/.test(dataUrl)) throw new Error('Format de photo non pris en charge.');
+  if (dataUrl.length > MAX_PHOTO_CHARS) throw new Error('Photo trop lourde.');
+  person.photo = dataUrl;
+  person.photoUpdatedAt = new Date().toISOString();
+  return person;
+}
+AUDITED_ACTIONS.set(setPhoto, 'Photo de profil modifiée');
