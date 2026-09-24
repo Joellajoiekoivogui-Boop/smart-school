@@ -1,5 +1,17 @@
 import Link from 'next/link';
 import './site.css';
+import {
+  ChatDemo,
+  ConsoleLive,
+  CtaBand,
+  Faq,
+  MotionLink,
+  MotionRoot,
+  Reveal,
+  RevealItem,
+  ScrollProgress,
+  WordsTitle,
+} from './site-motion';
 
 // Numero WhatsApp commercial (format international sans +). Sans lui, le bouton
 // « Demander une démo » renvoie vers la section contact.
@@ -79,39 +91,11 @@ function Mark() {
   return <span className="brand-mark" aria-hidden="true">V</span>;
 }
 
-function ChatDemo() {
-  return (
-    <div className="phone" role="img" aria-label="Exemple de conversation WhatsApp entre un client et l'agent">
-      <div className="phone-head">
-        <span className="phone-avatar">BD</span>
-        <div>
-          <div className="phone-name">Boutique Démo Conakry</div>
-          <div className="phone-status">en ligne</div>
-        </div>
-      </div>
-      <div className="phone-body">
-        <div className="bubble in">Bonsoir, vous avez le Tecno Spark 20 ? C’est combien ?</div>
-        <div className="bubble out">
-          Bonsoir ! Oui, il est en stock ✅<br />
-          Tecno Spark 20 : <b className="mono">1 850 000 GNF</b>.<br />
-          Vous l’utilisez surtout pour les photos, ou plutôt pour l’autonomie ?
-          <span className="bubble-time mono">21:47</span>
-        </div>
-        <div className="bubble in">Les photos. Mais c’est un peu cher…</div>
-        <div className="bubble out">
-          Je comprends. Il a un capteur 50 MP, très bon en faible lumière. Je peux vous
-          préparer un devis avec livraison à Kaloum demain ?
-          <span className="bubble-time mono">21:48</span>
-        </div>
-        <div className="tool-note mono">↳ search_catalog · qualify_lead : chaud</div>
-      </div>
-    </div>
-  );
-}
-
 export default function Home() {
   return (
+    <MotionRoot>
     <div className="site">
+      <ScrollProgress />
       <header className="site-nav">
         <div className="wrap nav-inner">
           <a href="#" className="site-brand">
@@ -132,22 +116,26 @@ export default function Home() {
         <section className="hero">
           <div className="wrap hero-grid">
             <div>
-              <p className="eyebrow">Agent commercial IA · WhatsApp</p>
-              <h1>Un commercial qui répond à vos clients, même à 22h.</h1>
-              <p className="lead">
-                Vigie Commerciale se branche sur votre numéro WhatsApp existant. Il répond avec vos
-                vrais prix et vos vrais stocks, qualifie chaque prospect, relance ceux qui hésitent,
-                et vous passe la main quand il le faut.
-              </p>
-              <div className="hero-cta">
-                <a href={DEMO_HREF} className="btn btn-accent btn-lg">Demander une démo</a>
-                <a href="#fonctionnement" className="btn btn-lg">Voir comment ça marche</a>
-              </div>
-              <ul className="hero-facts">
-                <li><b>24h/24</b> disponible</li>
-                <li><b>0</b> prix inventé</li>
-                <li><b>1</b> scan pour démarrer</li>
-              </ul>
+              <Reveal>
+                <RevealItem as="p" className="eyebrow">Agent commercial IA · WhatsApp</RevealItem>
+              </Reveal>
+              <WordsTitle text="Un commercial qui répond à vos clients, même à 22h." />
+              <Reveal delay={0.55}>
+                <RevealItem as="p" className="lead">
+                  Vigie Commerciale se branche sur votre numéro WhatsApp existant. Il répond avec vos
+                  vrais prix et vos vrais stocks, qualifie chaque prospect, relance ceux qui hésitent,
+                  et vous passe la main quand il le faut.
+                </RevealItem>
+                <RevealItem className="hero-cta">
+                  <MotionLink href={DEMO_HREF} className="btn btn-accent btn-lg">Demander une démo</MotionLink>
+                  <MotionLink href="#fonctionnement" className="btn btn-lg">Voir comment ça marche</MotionLink>
+                </RevealItem>
+                <RevealItem as="ul" className="hero-facts">
+                  <li><b>24h/24</b> disponible</li>
+                  <li><b>0</b> prix inventé</li>
+                  <li><b>1</b> scan pour démarrer</li>
+                </RevealItem>
+              </Reveal>
             </div>
             <ChatDemo />
           </div>
@@ -155,98 +143,73 @@ export default function Home() {
 
         <section id="fonctionnement" className="section">
           <div className="wrap">
-            <div className="section-head">
-              <p className="eyebrow">Fonctionnement</p>
-              <h2>Pas un chatbot à réponses toutes faites.</h2>
-              <p>Un vrai parcours de vente, du premier message à la commande.</p>
-            </div>
-            <ol className="steps">
+            <Reveal className="section-head">
+              <RevealItem as="p" className="eyebrow">Fonctionnement</RevealItem>
+              <RevealItem as="h2">Pas un chatbot à réponses toutes faites.</RevealItem>
+              <RevealItem as="p">Un vrai parcours de vente, du premier message à la commande.</RevealItem>
+            </Reveal>
+            <Reveal as="ol" className="steps" step={0.1}>
               {ETAPES.map((e, i) => (
-                <li key={e.t} className="step">
+                <RevealItem as="li" key={e.t} className="step">
                   <span className="step-num mono">{String(i + 1).padStart(2, '0')}</span>
                   <h3>{e.t}</h3>
                   <p>{e.d}</p>
-                </li>
+                </RevealItem>
               ))}
-            </ol>
+            </Reveal>
           </div>
         </section>
 
         <section id="fonctions" className="section section-alt">
           <div className="wrap">
-            <div className="section-head">
-              <p className="eyebrow">Fonctions</p>
-              <h2>Tout ce qu’un bon vendeur fait, sans pause.</h2>
-            </div>
-            <div className="features">
+            <Reveal className="section-head">
+              <RevealItem as="p" className="eyebrow">Fonctions</RevealItem>
+              <RevealItem as="h2">Tout ce qu’un bon vendeur fait, sans pause.</RevealItem>
+            </Reveal>
+            <Reveal className="features">
               {FONCTIONS.map((f) => (
-                <article key={f.titre} className="feature">
+                <RevealItem as="article" key={f.titre} className="feature" hover>
                   <h3>{f.titre}</h3>
                   <p>{f.texte}</p>
-                </article>
+                </RevealItem>
               ))}
-            </div>
+            </Reveal>
           </div>
         </section>
 
         <section id="controle" className="section">
           <div className="wrap split">
-            <div>
-              <p className="eyebrow">Contrôle</p>
-              <h2>L’humain reste aux commandes.</h2>
-              <p className="lead">
+            <Reveal>
+              <RevealItem as="p" className="eyebrow">Contrôle</RevealItem>
+              <RevealItem as="h2">L’humain reste aux commandes.</RevealItem>
+              <RevealItem as="p" className="lead">
                 Depuis la console, vous voyez chaque conversation, chaque prospect qualifié, et vous
                 décidez de ce que l’agent a le droit de promettre.
-              </p>
+              </RevealItem>
               <ul className="checks">
-                {CONTROLES.map((c) => <li key={c}>{c}</li>)}
+                {CONTROLES.map((c) => <RevealItem as="li" key={c}>{c}</RevealItem>)}
               </ul>
-              <Link href="/login" className="btn btn-accent">Ouvrir la console</Link>
-            </div>
-            <div className="console-card" aria-hidden="true">
-              <div className="console-row head">
-                <span>Prospect</span><span>Besoin</span><span>Statut</span>
-              </div>
-              <div className="console-row">
-                <span>Mariama D.</span><span>Climatiseur 1.5CV</span>
-                <span className="pill pill-pret">Prêt</span>
-              </div>
-              <div className="console-row">
-                <span>Ibrahima S.</span><span>Tecno Spark 20</span>
-                <span className="pill pill-chaud">Chaud</span>
-              </div>
-              <div className="console-row">
-                <span>Fatoumata K.</span><span>Riz 50 kg × 10</span>
-                <span className="pill pill-tiede">Tiède</span>
-              </div>
-              <div className="console-row">
-                <span>Alpha B.</span><span>Réclamation livraison</span>
-                <span className="pill pill-critique">Humain requis</span>
-              </div>
-            </div>
+              <RevealItem>
+                <MotionLink href="/login" className="btn btn-accent">Ouvrir la console</MotionLink>
+              </RevealItem>
+            </Reveal>
+            <ConsoleLive />
           </div>
         </section>
 
         <section id="faq" className="section section-alt">
           <div className="wrap narrow">
-            <div className="section-head">
-              <p className="eyebrow">Questions fréquentes</p>
-              <h2>Ce qu’on nous demande souvent.</h2>
-            </div>
-            <div className="faq">
-              {FAQ.map((f) => (
-                <details key={f.q}>
-                  <summary>{f.q}</summary>
-                  <p>{f.r}</p>
-                </details>
-              ))}
-            </div>
+            <Reveal className="section-head">
+              <RevealItem as="p" className="eyebrow">Questions fréquentes</RevealItem>
+              <RevealItem as="h2">Ce qu’on nous demande souvent.</RevealItem>
+            </Reveal>
+            <Faq items={FAQ} />
           </div>
         </section>
 
         <section id="contact" className="section">
           <div className="wrap">
-            <div className="cta-band">
+            <CtaBand>
               <div>
                 <h2>Prêt à ne plus rater un seul client ?</h2>
                 <p>
@@ -256,11 +219,11 @@ export default function Home() {
                 </p>
               </div>
               {CONTACT_WHATSAPP ? (
-                <a href={DEMO_HREF} className="btn btn-lg btn-invert">Écrire sur WhatsApp</a>
+                <MotionLink href={DEMO_HREF} className="btn btn-lg btn-invert">Écrire sur WhatsApp</MotionLink>
               ) : (
                 <Link href="/login" className="btn btn-lg btn-invert">Espace client</Link>
               )}
-            </div>
+            </CtaBand>
           </div>
         </section>
       </main>
@@ -272,5 +235,6 @@ export default function Home() {
         </div>
       </footer>
     </div>
+    </MotionRoot>
   );
 }
