@@ -7,6 +7,7 @@
  * (permission, validation), l'état n'est pas modifié et l'erreur est remontée.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { buildSeed } from './seed.js';
 
 const STATE_KEY = 'n1_state_v1';
@@ -111,11 +112,21 @@ export function StoreProvider({ children }) {
   return (
     <StoreContext.Provider value={value}>
       {children}
-      {toast && (
-        <div className={`toast toast-${toast.type}`} role="status" key={toast.id}>
-          {toast.message}
-        </div>
-      )}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            className={`toast toast-${toast.type}`}
+            role="status"
+            key={toast.id}
+            initial={{ opacity: 0, y: 24, x: '-50%', scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, x: '-50%', scale: 1 }}
+            exit={{ opacity: 0, y: 12, x: '-50%', scale: 0.98 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </StoreContext.Provider>
   );
 }

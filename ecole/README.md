@@ -112,6 +112,23 @@ arrondies à 14 px, boutons à 10 px, petits éléments à 8 px, ombre
 `0 4px 20px rgba(15, 23, 42, 0.06)`. Interface responsive (mobile + ordinateur).
 Tous les jetons sont dans `app/globals.css`.
 
+### Animations (Motion, ex-Framer Motion)
+
+Les animations sont courtes et utiles, sans effet décoratif gratuit
+(`components/motion.jsx`) :
+
+- apparition en cascade des cartes et statistiques à chaque page ;
+- indicateur glissant du menu latéral et des onglets ;
+- barres, anneaux et courbes qui se tracent à l’affichage ;
+- ouverture des fenêtres (modales) et notifications (toasts) animées ;
+- entraînement : transition entre questions, secousse sur une mauvaise
+  réponse, rebond sur une bonne, trophée au score final ;
+- retour tactile sur les boutons et survol des cartes.
+
+Si l’utilisateur a activé « réduire les animations » dans son système, les
+déplacements sont supprimés (`MotionConfig reducedMotion="user"` + règle CSS
+`prefers-reduced-motion`).
+
 ## Structure
 
 ```

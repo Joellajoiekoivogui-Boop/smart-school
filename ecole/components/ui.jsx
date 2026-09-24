@@ -1,23 +1,25 @@
 'use client';
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import { motion } from 'motion/react';
 import Icon from './Icon';
+import { EASE, itemVariants } from './motion';
 import { formatDate, formatNote } from '@/lib/compute';
 
 export function PageHead({ title, subtitle, children }) {
   return (
-    <div className="page-head">
+    <motion.div className="page-head" variants={itemVariants}>
       <div>
         <h1>{title}</h1>
         {subtitle && <p>{subtitle}</p>}
       </div>
       {children && <div className="row">{children}</div>}
-    </div>
+    </motion.div>
   );
 }
 
 export function Card({ title, action, children, className = '', flush = false }) {
   return (
-    <section className={`card ${flush ? 'flush' : ''} ${className}`}>
+    <motion.section className={`card ${flush ? 'flush' : ''} ${className}`} variants={itemVariants}>
       {(title || action) && (
         <div className="card-head">
           {title && <h2>{title}</h2>}
@@ -25,13 +27,13 @@ export function Card({ title, action, children, className = '', flush = false })
         </div>
       )}
       {children}
-    </section>
+    </motion.section>
   );
 }
 
 export function Stat({ label, value, unit, sub, icon, tone = 'blue', children }) {
   return (
-    <div className="card stat">
+    <motion.div className="card stat" variants={itemVariants} whileHover={{ y: -2 }}>
       <div className="stat-top">
         <span className="stat-label">{label}</span>
         {icon && (
@@ -46,7 +48,7 @@ export function Stat({ label, value, unit, sub, icon, tone = 'blue', children })
       </div>
       {sub && <div className="stat-sub">{sub}</div>}
       {children}
-    </div>
+    </motion.div>
   );
 }
 
@@ -78,12 +80,13 @@ export function Bar({ value, max = 100, tone }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
     <div className={`bar ${tone || ''}`} role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
-      <span style={{ width: `${pct}%` }} />
+      <motion.span initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: EASE, delay: 0.15 }} />
     </div>
   );
 }
 
 export function Tabs({ tabs, value, onChange }) {
+  const id = useId();
   return (
     <div className="tabs" role="tablist">
       {tabs.map((t) => (
@@ -94,7 +97,14 @@ export function Tabs({ tabs, value, onChange }) {
           className={`tab ${value === t.value ? 'active' : ''}`}
           onClick={() => onChange(t.value)}
         >
-          {t.label}
+          {value === t.value && (
+            <motion.span
+              className="tab-indicator"
+              layoutId={`tab-${id}`}
+              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+            />
+          )}
+          <span className="tab-label">{t.label}</span>
         </button>
       ))}
     </div>
@@ -103,8 +113,22 @@ export function Tabs({ tabs, value, onChange }) {
 
 export function Modal({ title, onClose, children, footer, wide }) {
   return (
-    <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={`modal ${wide ? 'modal-wide' : ''}`} role="dialog" aria-modal="true" aria-label={title}>
+    <motion.div
+      className="modal-back"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.18 }}
+    >
+      <motion.div
+        className={`modal ${wide ? 'modal-wide' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        initial={{ opacity: 0, y: 16, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.28, ease: EASE }}
+      >
         <div className="modal-head no-print">
           <h2>{title}</h2>
           <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Fermer">
@@ -113,8 +137,8 @@ export function Modal({ title, onClose, children, footer, wide }) {
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-foot no-print">{footer}</div>}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -143,13 +167,12 @@ export function Grade({ value }) {
 /** Anneau de pourcentage (indicateur unique : pas de légende nécessaire). */
 export function Ring({ value, size = 88, stroke = 9, color = 'var(--blue)', label }) {
   const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(100, value ?? 0));
   return (
     <div className="ring" style={{ width: size, height: size }}>
       <svg width={size} height={size} aria-hidden="true">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--gray-100)" strokeWidth={stroke} />
-        <circle
+        <motion.circle
           cx={size / 2}
           cy={size / 2}
           r={r}
@@ -157,7 +180,9 @@ export function Ring({ value, size = 88, stroke = 9, color = 'var(--blue)', labe
           stroke={color}
           strokeWidth={stroke}
           strokeLinecap="round"
-          strokeDasharray={`${(pct / 100) * c} ${c}`}
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: pct / 100 }}
+          transition={{ duration: 0.9, ease: EASE, delay: 0.15 }}
         />
       </svg>
       <div className="ring-label" style={{ fontSize: size / 5 }}>
@@ -226,13 +251,29 @@ export function LineChart({ points, height = 200, min = 0, max = 20, format = fo
             </text>
           ) : null,
         )}
-        <path d={area} fill="url(#lc-fill)" />
-        <path d={d} fill="none" stroke="#2563EB" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        <motion.path
+          d={area}
+          fill="url(#lc-fill)"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+        />
+        <motion.path
+          d={d}
+          fill="none"
+          stroke="#2563EB"
+          strokeWidth="2"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.9, ease: EASE, delay: 0.1 }}
+        />
         {hover != null && (
           <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={height - pad.b} stroke="#94A3B8" strokeWidth="1" />
         )}
         {points.map((p, i) => (
-          <circle
+          <motion.circle
             key={p.date}
             cx={x(i)}
             cy={y(p.value)}
@@ -240,11 +281,23 @@ export function LineChart({ points, height = 200, min = 0, max = 20, format = fo
             fill="#fff"
             stroke="#2563EB"
             strokeWidth="2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25, delay: 0.1 + (i / Math.max(1, points.length - 1)) * 0.8 }}
           />
         ))}
-        <text x={x(points.length - 1) + 10} y={y(last.value) + 4} fontSize="12" fontWeight="700" fill="#0F172A">
+        <motion.text
+          x={x(points.length - 1) + 10}
+          y={y(last.value) + 4}
+          fontSize="12"
+          fontWeight="700"
+          fill="#0F172A"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.9 }}
+        >
           {format(last.value)}
-        </text>
+        </motion.text>
       </svg>
       {hover != null && (
         <div
@@ -271,7 +324,7 @@ export function HBars({ rows, max = 20, format = formatNote, markLabel = 'Moyenn
   return (
     <div>
       <div className="hbars">
-        {rows.map((r) => (
+        {rows.map((r, i) => (
           <div
             className="hbar"
             key={r.label}
@@ -279,7 +332,12 @@ export function HBars({ rows, max = 20, format = formatNote, markLabel = 'Moyenn
           >
             <span className="ellipsis">{r.label}</span>
             <div className="hbar-track">
-              <div className="hbar-fill" style={{ width: `${((r.value ?? 0) / max) * 100}%` }} />
+              <motion.div
+                className="hbar-fill"
+                initial={{ width: 0 }}
+                animate={{ width: `${((r.value ?? 0) / max) * 100}%` }}
+                transition={{ duration: 0.7, ease: EASE, delay: 0.1 + i * 0.04 }}
+              />
               {r.mark != null && <div className="hbar-mark" style={{ left: `${(r.mark / max) * 100}%` }} />}
             </div>
             <span className="num strong" style={{ textAlign: 'right' }}>

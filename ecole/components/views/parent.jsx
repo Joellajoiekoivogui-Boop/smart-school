@@ -1,5 +1,6 @@
 'use client';
 import Icon from '../Icon';
+import { Reveal } from '../motion';
 import { Avatar, Badge, Bar, Card, Empty, LineChart, PageHead, Stat } from '../ui';
 import {
   attendanceStats,
@@ -44,7 +45,7 @@ export function ParentDashboard({ state, user, studentId, go }) {
   const notifs = notificationsFor(state, user).slice(0, 6);
   return (
     <>
-      <div className="hero">
+      <Reveal className="hero">
         <div>
           <h1>
             Bonjour, {parent.title} {parent.lastName} 👋
@@ -60,7 +61,7 @@ export function ParentDashboard({ state, user, studentId, go }) {
             </div>
           </div>
         </div>
-      </div>
+      </Reveal>
 
       <div className="grid g-4 mt">
         <Stat label="Moyenne" value={formatNote(s.average)} unit="/ 20" icon="chart" tone="blue" sub={s.rank ? `${s.rank.rank}${s.rank.rank === 1 ? 'er' : 'e'} sur ${s.rank.size} élèves` : ''} />

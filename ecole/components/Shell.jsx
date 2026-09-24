@@ -6,7 +6,9 @@ import { useStore } from '@/lib/store';
 import { NAVIGATION, sectionLabel } from '@/lib/navigation';
 import { ROLES } from '@/lib/permissions';
 import { childrenOf, notificationsFor, studentClass } from '@/lib/compute';
+import { motion } from 'motion/react';
 import Icon from './Icon';
+import { Page } from './motion';
 import { Avatar } from './ui';
 import { VIEWS } from './views';
 
@@ -79,9 +81,20 @@ export default function Shell({ role, segments }) {
         <nav className="nav">
           {nav.map((n) => (
             <Link key={n.key} href={`/${role}${n.key ? `/${n.key}` : ''}`} className={n.key === section ? 'active' : ''}>
+              {n.key === section && (
+                <motion.span
+                  className="nav-indicator"
+                  layoutId="nav-indicator"
+                  transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+                />
+              )}
               <Icon name={n.icon} size={18} />
-              {n.label}
-              {counts[n.key] > 0 && <span className="count">{counts[n.key]}</span>}
+              <span className="nav-label-text">{n.label}</span>
+              {counts[n.key] > 0 && (
+                <motion.span className="count" key={counts[n.key]} initial={{ scale: 0.6 }} animate={{ scale: 1 }}>
+                  {counts[n.key]}
+                </motion.span>
+              )}
             </Link>
           ))}
         </nav>
@@ -137,7 +150,9 @@ export default function Shell({ role, segments }) {
 
         <main className="content">
           {View && (role !== 'parent' || studentId) ? (
-            <View {...store} role={role} studentId={studentId} params={params} go={go} />
+            <Page pageKey={`${section}/${params.join('/')}/${studentId || ''}`}>
+              <View {...store} role={role} studentId={studentId} params={params} go={go} />
+            </Page>
           ) : !View ? (
             <div className="card empty">
               <h2>Page introuvable</h2>

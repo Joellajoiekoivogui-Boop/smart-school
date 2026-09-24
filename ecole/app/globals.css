@@ -94,7 +94,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font-weight: 500; font-size: 14px; margin-bottom: 2px;
 }
 .nav a:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
-.nav a.active { background: var(--blue); color: #fff; }
+.nav a { position: relative; isolation: isolate; }
+.nav a.active { color: #fff; }
+.nav-indicator { position: absolute; inset: 0; z-index: -1; border-radius: var(--r-btn); background: var(--blue); box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35); }
 .nav .count {
   margin-left: auto; background: var(--red); color: #fff; font-size: 11px; font-weight: 600;
   border-radius: 999px; padding: 1px 7px;
@@ -138,7 +140,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .card {
   background: var(--white); border: 1px solid var(--border); border-radius: var(--r-card);
   box-shadow: var(--shadow); padding: 20px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
+.card.stat:hover { box-shadow: 0 10px 30px rgba(15, 23, 42, 0.09); }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .card-head h2 { font-size: 16px; }
 .card.flush { padding: 0; overflow: hidden; }
@@ -172,8 +176,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
   height: 42px; padding: 0 16px; border-radius: var(--r-btn);
   border: 1px solid var(--border); background: var(--white); color: var(--navy);
   font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, transform 0.12s ease, box-shadow 0.15s;
 }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn-primary:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28); }
 .btn:hover { background: var(--gray-50); border-color: var(--gray-300); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-primary { background: var(--blue); border-color: var(--blue); color: #fff; }
@@ -211,7 +217,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .tabs { display: flex; gap: 4px; background: var(--gray-100); padding: 4px; border-radius: var(--r-btn); width: fit-content; max-width: 100%; overflow-x: auto; }
 .tab { border: 0; background: transparent; padding: 7px 14px; border-radius: var(--r-sm); font-weight: 600; font-size: 13px; color: var(--text-2); cursor: pointer; white-space: nowrap; }
-.tab.active { background: var(--white); color: var(--navy); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1); }
+.tab { position: relative; transition: color 0.2s; }
+.tab.active { color: var(--navy); }
+.tab-label { position: relative; z-index: 1; }
+.tab-indicator { position: absolute; inset: 0; border-radius: var(--r-sm); background: var(--white); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12); }
 
 /* ---------------------------------------------------------------- Badges */
 .badge {
@@ -236,6 +245,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .table td { padding: 12px 14px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
 .table tr:last-child td { border-bottom: 0; }
 .table tr.clickable { cursor: pointer; }
+.table td { transition: background 0.15s; }
 .table tr.clickable:hover td { background: var(--gray-50); }
 .table .r { text-align: right; }
 .table .sticky { position: sticky; left: 0; z-index: 1; background: var(--white); box-shadow: 1px 0 0 var(--gray-100); }
@@ -309,7 +319,8 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .chat-compose { display: flex; gap: 10px; padding: 14px; border-top: 1px solid var(--border); }
 
 /* ---------------------------------------------------------------- Entraînement */
-.choice {
+.choice { transition: border-color 0.15s, background 0.15s;
+
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
   padding: 14px 16px; border-radius: var(--r-btn); border: 1.5px solid var(--border);
   background: var(--white); cursor: pointer; font-size: 15px; margin-bottom: 10px;
@@ -319,8 +330,8 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .choice.correct { border-color: var(--green); background: var(--green-50); }
 .choice.wrong { border-color: var(--red); background: var(--red-50); }
 .choice-key { width: 28px; height: 28px; border-radius: 8px; background: var(--gray-100); display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
-.subject-tile { text-align: left; cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
-.subject-tile:hover { transform: translateY(-2px); border-color: var(--blue); }
+.subject-tile { text-align: left; transition: border-color 0.15s, box-shadow 0.2s; }
+.subject-tile:hover { border-color: var(--blue); box-shadow: var(--shadow-lg); }
 
 /* ---------------------------------------------------------------- Divers */
 .alert { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: var(--r-btn); font-size: 14px; }
@@ -337,7 +348,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--border); }
 
 .toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 100;
+  position: fixed; bottom: 24px; left: 50%; z-index: 100;
   padding: 12px 18px; border-radius: var(--r-btn); font-weight: 500; font-size: 14px;
   box-shadow: var(--shadow-lg); max-width: calc(100vw - 32px);
 }
@@ -403,6 +414,12 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .modal-back { background: none; position: static; }
   .modal { box-shadow: none; max-height: none; }
   .no-print { display: none !important; }
+}
+
+/* ---------------------------------------------------------------- Mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  .btn:active:not(:disabled) { transform: none; }
 }
 
 /* ---------------------------------------------------------------- Responsive */

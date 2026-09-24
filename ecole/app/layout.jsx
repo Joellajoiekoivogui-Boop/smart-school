@@ -1,5 +1,6 @@
 import './globals.css';
 import { StoreProvider } from '@/lib/store';
+import { MotionProvider } from '@/components/motion';
 
 export const metadata = {
   title: 'N°1 — L’école connectée',
@@ -25,7 +26,9 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
-        <StoreProvider>{children}</StoreProvider>
+        <MotionProvider>
+          <StoreProvider>{children}</StoreProvider>
+        </MotionProvider>
       </body>
     </html>
   );

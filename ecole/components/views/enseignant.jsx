@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Icon from '../Icon';
+import { Reveal } from '../motion';
 import { Avatar, Badge, Card, Empty, Field, Grade, HBars, LineChart, Modal, PageHead, Select, Stat, Tabs } from '../ui';
 import {
   attendanceStats,
@@ -50,7 +51,7 @@ export function EnseignantDashboard({ state, user, go }) {
 
   return (
     <>
-      <div className="hero">
+      <Reveal className="hero">
         <div>
           <h1>Bonjour {user.name} 👋</h1>
           <p>
@@ -60,7 +61,7 @@ export function EnseignantDashboard({ state, user, go }) {
         <button className="btn btn-primary" onClick={() => go('presences')}>
           <Icon name="checkCircle" size={16} /> Faire l’appel
         </button>
-      </div>
+      </Reveal>
       <div className="grid g-4 mt">
         <Stat label="Mes classes" value={classes.length} icon="users" tone="blue" sub={`${students.length} élèves suivis`} />
         <Stat label="Appels du jour" value={`${callsDone}/${classes.length}`} icon="checkCircle" tone={callsDone === classes.length ? 'green' : 'orange'} sub="Classes dont l’appel est fait" />
@@ -196,7 +197,7 @@ export function StudentFile({ state, user, studentId, go, backLabel = 'Retour à
           <Icon name="chevronLeft" size={16} /> {backLabel}
         </button>
       </div>
-      <div className="card row between" style={{ alignItems: 'center' }}>
+      <Reveal className="card row between" style={{ alignItems: 'center' }}>
         <div className="row">
           <Avatar name={fullName(s)} size="lg" />
           <div>
@@ -221,7 +222,7 @@ export function StudentFile({ state, user, studentId, go, backLabel = 'Retour à
             ) : null;
           })}
         </div>
-      </div>
+      </Reveal>
       <div className="grid g-4 mt">
         <Stat label="Moyenne générale" value={formatNote(generalAverage(state, studentId))} unit="/ 20" icon="chart" tone="blue" />
         <Stat label="Absences" value={att.absent} icon="x" tone={att.absent ? 'red' : 'green'} sub={`${att.late} retard(s)`} />

@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Icon from '../Icon';
+import { Reveal, motion, EASE } from '../motion';
 import { Badge, Bar, Card, Empty, LineChart, PageHead, Stat } from '../ui';
 import {
   attendanceStats,
@@ -64,7 +65,7 @@ export function EleveDashboard({ state, user, go }) {
 
   return (
     <>
-      <div className="hero">
+      <Reveal className="hero">
         <div>
           <h1>Bonjour {student.firstName} 👋</h1>
           <p>
@@ -74,7 +75,7 @@ export function EleveDashboard({ state, user, go }) {
         <button className="btn btn-primary" onClick={() => go('entrainement')}>
           <Icon name="brain" size={16} /> S’entraîner
         </button>
-      </div>
+      </Reveal>
       <div className="grid g-4 mt">
         <Stat label="Moyenne générale" value={formatNote(avg)} unit="/ 20" icon="chart" tone="blue" sub={rank ? `${rank.rank}${rank.rank === 1 ? 'er' : 'e'} sur ${rank.size}` : ''} />
         <Stat label="Présence" value={att.rate == null ? '—' : `${Math.round(att.rate)} %`} icon="checkCircle" tone="green" sub={`${att.absent} absence(s) · ${att.late} retard(s)`} />
@@ -258,7 +259,14 @@ export function TrainingView({ state, user, run }) {
           <PageHead title={`Entraînement — ${subject.name}`} subtitle={session.topic || 'Toutes notions'} />
           <Card>
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <div style={{ fontSize: 48 }}>{pct >= 80 ? '🏆' : pct >= 50 ? '👍' : '💪'}</div>
+              <motion.div
+                style={{ fontSize: 48, display: 'inline-block' }}
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 14, delay: 0.1 }}
+              >
+                {pct >= 80 ? '🏆' : pct >= 50 ? '👍' : '💪'}
+              </motion.div>
               <h2 style={{ marginTop: 8 }}>
                 {session.correct} / {session.questions.length} bonnes réponses
               </h2>
@@ -302,38 +310,65 @@ export function TrainingView({ state, user, run }) {
         </PageHead>
         <Bar value={session.index} max={session.questions.length} />
         <Card className="mt">
-          <h2 style={{ marginBottom: 18 }}>{q.question}</h2>
-          {q.choices.map((c, i) => {
-            let cls = '';
-            if (session.checked) cls = i === q.answer ? 'correct' : i === session.selected ? 'wrong' : '';
-            else if (i === session.selected) cls = 'selected';
-            return (
-              <button key={c} className={`choice ${cls}`} disabled={session.checked} onClick={() => setSession({ ...session, selected: i })}>
-                <span className="choice-key">{String.fromCharCode(65 + i)}</span>
-                {c}
-              </button>
-            );
-          })}
-          {session.checked && (
-            <div className={`alert ${session.selected === q.answer ? 'alert-green' : 'alert-red'}`} style={{ marginTop: 6 }}>
-              <Icon name={session.selected === q.answer ? 'checkCircle' : 'alert'} size={18} />
-              <div>
-                <strong>{session.selected === q.answer ? 'Bonne réponse !' : `Réponse attendue : ${q.choices[q.answer]}`}</strong>
-                <div>{q.explanation}</div>
-              </div>
-            </div>
-          )}
-          <div className="row mt" style={{ justifyContent: 'flex-end' }}>
-            {!session.checked ? (
-              <button className="btn btn-primary" disabled={session.selected == null} onClick={check}>
-                Valider
-              </button>
-            ) : (
-              <button className="btn btn-primary" onClick={advance}>
-                {session.index + 1 < session.questions.length ? 'Question suivante' : 'Voir mon score'} <Icon name="chevronRight" size={16} />
-              </button>
+          <motion.div
+            key={session.index}
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, ease: EASE }}
+          >
+            <h2 style={{ marginBottom: 18 }}>{q.question}</h2>
+            {q.choices.map((c, i) => {
+              let cls = '';
+              if (session.checked) cls = i === q.answer ? 'correct' : i === session.selected ? 'wrong' : '';
+              else if (i === session.selected) cls = 'selected';
+              return (
+                <motion.button
+                  key={c}
+                  className={`choice ${cls}`}
+                  disabled={session.checked}
+                  onClick={() => setSession({ ...session, selected: i })}
+                  whileHover={session.checked ? undefined : { x: 3 }}
+                  whileTap={session.checked ? undefined : { scale: 0.99 }}
+                  animate={
+                    cls === 'wrong'
+                      ? { x: [0, -7, 7, -4, 4, 0], transition: { duration: 0.4 } }
+                      : cls === 'correct'
+                        ? { scale: [1, 1.025, 1], transition: { duration: 0.35 } }
+                        : { x: 0, scale: 1 }
+                  }
+                >
+                  <span className="choice-key">{String.fromCharCode(65 + i)}</span>
+                  {c}
+                </motion.button>
+              );
+            })}
+            {session.checked && (
+              <motion.div
+                className={`alert ${session.selected === q.answer ? 'alert-green' : 'alert-red'}`}
+                style={{ marginTop: 6 }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, ease: EASE }}
+              >
+                <Icon name={session.selected === q.answer ? 'checkCircle' : 'alert'} size={18} />
+                <div>
+                  <strong>{session.selected === q.answer ? 'Bonne réponse !' : `Réponse attendue : ${q.choices[q.answer]}`}</strong>
+                  <div>{q.explanation}</div>
+                </div>
+              </motion.div>
             )}
-          </div>
+            <div className="row mt" style={{ justifyContent: 'flex-end' }}>
+              {!session.checked ? (
+                <button className="btn btn-primary" disabled={session.selected == null} onClick={check}>
+                  Valider
+                </button>
+              ) : (
+                <button className="btn btn-primary" onClick={advance}>
+                  {session.index + 1 < session.questions.length ? 'Question suivante' : 'Voir mon score'} <Icon name="chevronRight" size={16} />
+                </button>
+              )}
+            </div>
+          </motion.div>
         </Card>
       </>
     );
@@ -347,7 +382,7 @@ export function TrainingView({ state, user, run }) {
           const st = stats[s.id];
           const topics = [...new Set(state.exercises.filter((x) => x.subjectId === s.id).map((x) => x.topic))];
           return (
-            <div key={s.id} className="card subject-tile">
+            <Reveal key={s.id} className="card subject-tile" whileHover={{ y: -3 }}>
               <div className="row between">
                 <h3>{s.name}</h3>
                 {st ? <Badge tone={st.score / st.total >= 0.7 ? 'green' : st.score / st.total >= 0.5 ? 'orange' : 'red'}>{Math.round((st.score / st.total) * 100)} %</Badge> : <Badge>Nouveau</Badge>}
@@ -365,7 +400,7 @@ export function TrainingView({ state, user, run }) {
               <button className="btn btn-primary btn-block mt" onClick={() => start(s.id)}>
                 <Icon name="target" size={16} /> S’entraîner
               </button>
-            </div>
+            </Reveal>
           );
         })}
       </div>

@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Icon from '../Icon';
+import { Reveal } from '../motion';
 import { Avatar, Badge, Bar, Card, Empty, Field, Grade, HBars, Modal, PageHead, Select, Stat, Tabs } from '../ui';
 import {
   attendanceStats,
@@ -60,7 +61,7 @@ export function AdminDashboard({ state, go }) {
 
   return (
     <>
-      <div className="hero">
+      <Reveal className="hero">
         <div>
           <h1>Tableau de bord de l’établissement</h1>
           <p>
@@ -75,7 +76,7 @@ export function AdminDashboard({ state, go }) {
             <Icon name="wallet" size={16} /> Encaisser
           </button>
         </div>
-      </div>
+      </Reveal>
       <div className="grid g-4 mt">
         <Stat label="Élèves inscrits" value={state.students.length} icon="user" tone="blue" sub={`${state.classes.length} classes · ${state.teachers.length} enseignants`} />
         <Stat label="Présence aujourd’hui" value={todayAtt.length ? `${Math.round((present / todayAtt.length) * 100)} %` : '—'} icon="checkCircle" tone="green" sub={`Appel fait dans ${callsDone}/${state.classes.length} classes`} />
