@@ -305,6 +305,7 @@ consomment une API distante.
 
 ```
 dashboard/
+  app/page.jsx               site vitrine public (presentation du produit, FAQ, contact)
   app/login/page.jsx        formulaire de connexion (POST /api/auth/login)
   app/dashboard/page.jsx     vue d'ensemble, conversations, leads, produits, parametres
   lib/api.js                 client HTTP (JWT en localStorage, redirection si session expiree)
@@ -317,9 +318,12 @@ dashboard/
    Next.js automatiquement — build/start commands par défaut).
 2. Ajoutez la variable d'environnement `NEXT_PUBLIC_API_BASE_URL` = l'URL
    publique de votre backend (Railway/Render), **sans** slash final.
-3. Déployez. Le CORS est déjà ouvert côté backend (`app.use(cors())` dans
+3. (Optionnel) `NEXT_PUBLIC_CONTACT_WHATSAPP` = votre numéro commercial
+   (international, sans `+`) : les boutons « Demander une démo » du site
+   vitrine ouvrent alors une conversation WhatsApp avec vous.
+4. Déployez. Le CORS est déjà ouvert côté backend (`app.use(cors())` dans
    `src/app.js`) — aucune configuration supplémentaire n'est nécessaire.
-4. Connectez-vous avec les identifiants créés par `npm run seed`
+5. Connectez-vous avec les identifiants créés par `npm run seed`
    (`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`).
 
 Sans backend public à interroger, le formulaire de connexion affiche un
