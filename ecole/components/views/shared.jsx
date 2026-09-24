@@ -32,6 +32,7 @@ import {
   userForPerson,
 } from '@/lib/compute';
 import { canAccessStudent, messageContacts, can } from '@/lib/permissions';
+import { priorities } from '@/lib/alerts';
 import { DAYS, TIME_SLOTS, toISODate } from '@/lib/seed';
 import * as A from '@/lib/actions';
 
@@ -115,16 +116,121 @@ function Row({ children }) {
 export function TimetableView({ state, user, role, studentId }) {
   const student = studentId && byId(state.students, studentId);
   const teacherId = role === 'enseignant' ? user.personId : null;
+  const [view, setView] = useState('jour');
   return (
     <>
       <PageHead
         title="Emploi du temps"
-        subtitle={student ? `${fullName(student)} — ${studentClass(state, student)?.name}` : 'Vos cours de la semaine'}
-      />
-      <Card>
-        <TimetableGrid state={state} classId={student?.classId} teacherId={teacherId} />
-      </Card>
+        subtitle={student ? `${fullName(student)} — ${studentClass(state, student)?.name}` : 'Vos cours, salles et échéances'}
+      >
+        <Tabs value={view} onChange={setView} tabs={[{ value: 'jour', label: 'Ma journée' }, { value: 'semaine', label: 'Semaine' }]} />
+      </PageHead>
+      {view === 'jour' ? (
+        <DayAgenda state={state} user={user} student={student} teacherId={teacherId} />
+      ) : (
+        <Card>
+          <TimetableGrid state={state} classId={student?.classId} teacherId={teacherId} />
+        </Card>
+      )}
     </>
+  );
+}
+
+/**
+ * Emploi du temps intelligent : la journée (ou la prochaine journée de cours)
+ * avec cours, salles, enseignants, devoirs à rendre et événements.
+ */
+export function DayAgenda({ state, student, teacherId }) {
+  const now = new Date();
+  // Le week-end, on affiche le lundi suivant.
+  const target = new Date(now);
+  while (target.getDay() === 0 || target.getDay() === 6) target.setDate(target.getDate() + 1);
+  const iso = toISODate(target);
+  const isToday = iso === toISODate(now);
+  const day = target.getDay() - 1;
+  const hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const slots = state.timetable
+    .filter((t) => t.day === day && (student ? t.classId === student.classId : t.teacherId === teacherId))
+    .sort((a, b) => a.slot - b.slot);
+  const dueHw = state.homework.filter((h) =>
+    student ? h.classId === student.classId && h.dueDate === iso : h.teacherId === teacherId && h.dueDate === iso,
+  );
+  const upcoming = state.homework
+    .filter((h) => (student ? h.classId === student.classId : h.teacherId === teacherId) && h.dueDate > iso)
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+    .slice(0, 4);
+  const events = state.calendar.filter((e) => e.date >= iso).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
+  return (
+    <div className="grid g-main">
+      <Card title={`${isToday ? 'Aujourd’hui' : 'Prochain jour de cours'} — ${formatDate(iso, { weekday: 'long', day: 'numeric', month: 'long' })}`}>
+        {slots.length ? (
+          <div className="timeline">
+            {slots.map((t) => {
+              const ts = TIME_SLOTS[t.slot];
+              const subject = byId(state.subjects, t.subjectId);
+              const state_ = !isToday ? 'avenir' : hm >= ts.end ? 'passe' : hm >= ts.start ? 'encours' : 'avenir';
+              const hw = dueHw.filter((h) => h.subjectId === t.subjectId);
+              return (
+                <div key={t.id} className={`timeline-item agenda-${state_}`}>
+                  <span className={`timeline-dot tone-${state_ === 'encours' ? 'blue' : state_ === 'passe' ? 'navy' : 'green'}`}>
+                    <Icon name={state_ === 'passe' ? 'check' : 'clock'} size={14} />
+                  </span>
+                  <div style={{ flex: 1 }}>
+                    <div className="row between" style={{ flexWrap: 'nowrap' }}>
+                      <span className="strong">{subject?.name}</span>
+                      <span className="num small muted">
+                        {ts.start} – {ts.end}
+                      </span>
+                    </div>
+                    <div className="small muted">
+                      {student ? teacherName(state, t.teacherId) : byId(state.classes, t.classId)?.name} · {t.room}
+                    </div>
+                    {state_ === 'encours' && <Badge tone="blue">En cours</Badge>}
+                    {hw.map((h) => (
+                      <div key={h.id} style={{ marginTop: 6 }}>
+                        <Badge tone="orange" icon="edit">
+                          Devoir à rendre : {h.title}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <Empty>Pas de cours ce jour-là.</Empty>
+        )}
+      </Card>
+      <div className="stack">
+        <Card title="Devoirs à venir">
+          {upcoming.map((h) => (
+            <div className="list-item" key={h.id}>
+              <div className="grow">
+                <div className="strong small ellipsis">{h.title}</div>
+                <div className="tiny muted">
+                  {byId(state.subjects, h.subjectId)?.name}
+                  {!student && ` · ${byId(state.classes, h.classId)?.name}`}
+                </div>
+              </div>
+              <Badge>{formatDate(h.dueDate, { weekday: 'short', day: 'numeric' })}</Badge>
+            </div>
+          ))}
+          {!upcoming.length && <Empty>Aucun devoir à venir.</Empty>}
+        </Card>
+        <Card title="Événements">
+          {events.map((e) => (
+            <div className="list-item" key={e.id}>
+              <div className="num strong small" style={{ width: 64 }}>
+                {formatDate(e.date)}
+              </div>
+              <div className="grow small">{e.title}</div>
+            </div>
+          ))}
+          {!events.length && <Empty>Aucun événement prévu.</Empty>}
+        </Card>
+      </div>
+    </div>
   );
 }
 
@@ -159,7 +265,20 @@ export function MessagesView({ state, user, run, params, go }) {
     .filter((m) => (m.from === user.id && m.to === activeId) || (m.to === user.id && m.from === activeId))
     .sort((a, b) => a.at.localeCompare(b.at));
   const [draft, setDraft] = useState('');
+  const [about, setAbout] = useState('');
   const endRef = useRef(null);
+
+  // Élèves auxquels la conversation peut être rattachée (« à propos de … »).
+  const linked = useMemo(() => {
+    if (!active || user.role === 'eleve') return [];
+    let ids = [];
+    if (active.role === 'parent') ids = byId(state.parents, active.personId)?.childrenIds || [];
+    else if (active.role === 'eleve') ids = [active.personId];
+    else if (user.role === 'parent') ids = byId(state.parents, user.personId)?.childrenIds || [];
+    return ids.filter((id) => canAccessStudent(state, user, id)).map((id) => byId(state.students, id)).filter(Boolean);
+  }, [active, user, state]);
+  useEffect(() => setAbout(''), [activeId]);
+  const shown = about ? conversation.filter((m) => m.studentId === about) : conversation;
 
   const hasUnread = conversation.some((m) => m.to === user.id && !m.read);
   useEffect(() => {
@@ -170,7 +289,7 @@ export function MessagesView({ state, user, run, params, go }) {
   const send = (e) => {
     e.preventDefault();
     if (!draft.trim()) return;
-    const res = run(A.sendMessage, { to: activeId, body: draft });
+    const res = run(A.sendMessage, { to: activeId, body: draft, studentId: about || undefined });
     if (res.ok) setDraft('');
   };
 
@@ -219,26 +338,50 @@ export function MessagesView({ state, user, run, params, go }) {
           <div className="chat-thread">
             {active ? (
               <>
-                <div className="row" style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
-                  <Avatar name={active.name} />
-                  <div>
-                    <div className="strong">{active.name}</div>
-                    <div className="tiny muted">{roleLabel(active)}</div>
+                <div className="row between" style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
+                  <div className="row">
+                    <Avatar name={active.name} />
+                    <div>
+                      <div className="strong">{active.name}</div>
+                      <div className="tiny muted">{roleLabel(active)}</div>
+                    </div>
                   </div>
+                  {linked.length > 0 && (
+                    <Select
+                      className="select input-sm"
+                      style={{ width: 210 }}
+                      value={about}
+                      onChange={setAbout}
+                      aria-label="À propos de"
+                      options={[{ value: '', label: 'Tous les sujets' }, ...linked.map((st) => ({ value: st.id, label: `À propos de ${st.firstName}` }))]}
+                    />
+                  )}
                 </div>
                 <div className="chat-messages">
-                  {conversation.map((m) => (
+                  {shown.map((m) => (
                     <div key={m.id} className={`bubble ${m.from === user.id ? 'mine' : ''}`}>
+                      {m.studentId && (
+                        <div className="bubble-tag">
+                          <Icon name="child" size={12} /> {byId(state.students, m.studentId)?.firstName}
+                        </div>
+                      )}
                       {m.body}
                       <div className="bubble-time">{timeAgo(m.at)}</div>
                     </div>
                   ))}
-                  {!conversation.length && <Empty>Démarrez la conversation avec {active.name}.</Empty>}
+                  {!shown.length && <Empty>{about ? 'Aucun message sur ce sujet.' : `Démarrez la conversation avec ${active.name}.`}</Empty>}
                   <div ref={endRef} />
                 </div>
                 {canWrite ? (
                   <form className="chat-compose" onSubmit={send}>
-                    <input className="input" placeholder="Écrire un message…" value={draft} onChange={(e) => setDraft(e.target.value)} aria-label="Message" />
+                    <input
+                      className="input"
+                      placeholder={about ? `Message à propos de ${byId(state.students, about)?.firstName}…` : 'Écrire un message…'}
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      aria-label="Message"
+                      maxLength={2000}
+                    />
                     <button className="btn btn-primary" type="submit" disabled={!draft.trim()}>
                       <Icon name="send" size={16} /> Envoyer
                     </button>
@@ -267,7 +410,40 @@ const NOTIF_STYLE = {
   absence: ['alert', 'red'],
   retard: ['clock', 'orange'],
   paiement: ['wallet', 'red'],
+  baisse: ['trend', 'orange'],
+  sortie: ['door', 'blue'],
+  bulletin: ['file', 'green'],
 };
+
+const SEVERITY = { critique: ['Urgent', 'red'], attention: ['À suivre', 'orange'] };
+
+/** Priorités du jour (tableaux de bord de chaque rôle). */
+export function PrioritiesCard({ state, user, go }) {
+  const list = priorities(state, user, notificationsFor(state, user));
+  if (!list.length) {
+    return (
+      <div className="alert alert-green" style={{ marginTop: 18 }}>
+        <Icon name="checkCircle" size={18} /> Rien d’urgent : tout est à jour.
+      </div>
+    );
+  }
+  return (
+    <Card title="À traiter en priorité" className="mt priorities">
+      <div className="priority-grid">
+        {list.map((p) => {
+          const [label, tone] = SEVERITY[p.severity] || ['Info', 'blue'];
+          return (
+            <button key={p.id} className={`priority priority-${tone}`} onClick={() => p.link && go(p.link)}>
+              <Badge tone={tone}>{label}</Badge>
+              <span className="strong small">{p.title}</span>
+              {p.body && <span className="tiny muted ellipsis">{p.body}</span>}
+            </button>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
 
 export function AnnouncementComposer({ state, user, run, classes, allowAll }) {
   const [target, setTarget] = useState(allowAll ? 'tous' : `classe:${classes[0]?.id}`);
@@ -331,7 +507,7 @@ export function targetLabel(state, t) {
   return t.label || 'Groupe';
 }
 
-export function NotificationsView({ state, user, run, role }) {
+export function NotificationsView({ state, user, run, role, go }) {
   const items = notificationsFor(state, user);
   const unread = items.filter((n) => !n.read);
   const teacher = role === 'enseignant' ? byId(state.teachers, user.personId) : null;
@@ -360,7 +536,15 @@ export function NotificationsView({ state, user, run, role }) {
                   {!n.read && <span className="dot" style={{ background: 'var(--blue)' }} aria-label="non lue" />}
                 </div>
                 <p className="small muted">{n.body}</p>
-                <p className="tiny muted">{timeAgo(n.at)}</p>
+                <div className="row" style={{ gap: 8 }}>
+                  <span className="tiny muted">{timeAgo(n.at)}</span>
+                  {SEVERITY[n.severity] && <Badge tone={SEVERITY[n.severity][1]}>{SEVERITY[n.severity][0]}</Badge>}
+                  {n.link && (
+                    <button className="btn btn-ghost btn-sm" onClick={() => go(n.link)}>
+                      Voir <Icon name="chevronRight" size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -414,10 +598,10 @@ export function NotificationsView({ state, user, run, role }) {
 
 export function BulletinModal({ state, studentId, termId, onClose }) {
   const rc = reportCard(state, studentId, termId);
-  const head = rc.cls && byId(state.teachers, rc.cls.headTeacherId);
+  const published = state.bulletinsPublished?.[`${rc.cls.id}-${termId}`];
   return (
     <Modal
-      title={`Bulletin — ${rc.term?.name}`}
+      title={`${published ? 'Bulletin' : 'Relevé provisoire'} — ${rc.term?.name}`}
       onClose={onClose}
       wide
       footer={
@@ -431,98 +615,111 @@ export function BulletinModal({ state, studentId, termId, onClose }) {
         </>
       }
     >
-      <div className="bulletin print-area">
-        <div className="bulletin-head">
-          <div>
-            <h2>{state.school.name}</h2>
-            <div className="small">
-              {state.school.city} · Année scolaire {state.school.year}
-            </div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div className="strong">BULLETIN DE NOTES</div>
-            <div className="small">{rc.term?.name}</div>
-          </div>
-        </div>
-        <div className="row between mt">
-          <div>
-            <div className="strong" style={{ fontSize: 16 }}>
-              {fullName(rc.student)}
-            </div>
-            <div className="small">
-              Matricule {rc.student.matricule} · Né(e) le {formatDate(rc.student.birthDate, { day: 'numeric', month: 'long', year: 'numeric' })}
-            </div>
-          </div>
-          <div className="small" style={{ textAlign: 'right' }}>
-            Classe : <strong>{rc.cls.name}</strong>
-            <br />
-            Professeur principal : {head ? `${head.gender === 'F' ? 'Mme' : 'M.'} ${fullName(head)}` : '—'}
-          </div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Matière</th>
-              <th>Coef.</th>
-              <th>Moyenne</th>
-              <th>Moy. classe</th>
-              <th>Points</th>
-              <th>Enseignant</th>
-              <th>Appréciation</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rc.lines.map((l) => (
-              <tr key={l.subject.id}>
-                <td>{l.subject.name}</td>
-                <td>{l.subject.coef}</td>
-                <td className="strong">{formatNote(l.average)}</td>
-                <td>{formatNote(l.classAverage)}</td>
-                <td>{l.points == null ? '—' : formatNote(l.points)}</td>
-                <td>{l.teacher}</td>
-                <td>{l.appreciation}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="bulletin-summary">
-          <div>
-            <div className="tiny">Moyenne générale</div>
-            <div className="strong" style={{ fontSize: 18 }}>
-              {formatNote(rc.average)}/20
-            </div>
-          </div>
-          <div>
-            <div className="tiny">Rang</div>
-            <div className="strong" style={{ fontSize: 18 }}>
-              {rc.rank ? `${rc.rank.rank}${rc.rank.rank === 1 ? 'er' : 'e'} / ${rc.rank.size}` : '—'}
-            </div>
-          </div>
-          <div>
-            <div className="tiny">Moyenne de la classe</div>
-            <div className="strong" style={{ fontSize: 18 }}>
-              {formatNote(rc.classAverage)}
-            </div>
-          </div>
-          <div>
-            <div className="tiny">Absences / retards</div>
-            <div className="strong" style={{ fontSize: 18 }}>
-              {rc.attendance.absent} / {rc.attendance.late}
-            </div>
-          </div>
-        </div>
-        <p className="mt small">
-          <strong>Appréciation générale :</strong> {rc.appreciation}.{' '}
-          {rc.average >= 12 ? 'Travail sérieux, à poursuivre.' : rc.average >= 10 ? 'Des efforts à fournir pour progresser.' : 'Travail insuffisant, un suivi est nécessaire.'}
-        </p>
-        <div className="row between mt small" style={{ marginTop: 32 }}>
-          <span>Le professeur principal</span>
-          <span>La direction</span>
-        </div>
+      <div className="print-area">
+        <BulletinSheet state={state} studentId={studentId} termId={termId} />
       </div>
     </Modal>
   );
 }
+
+/** Contenu imprimable d'un bulletin (utilisé seul ou en lot pour toute une classe). */
+export function BulletinSheet({ state, studentId, termId }) {
+  const rc = reportCard(state, studentId, termId);
+  const head = rc.cls && byId(state.teachers, rc.cls.headTeacherId);
+  const published = state.bulletinsPublished?.[`${rc.cls.id}-${termId}`];
+  return (
+    <div className="bulletin">
+      <div className="bulletin-head">
+        <div>
+          <h2>{state.school.name}</h2>
+          <div className="small">
+            {state.school.city} · Année scolaire {state.school.year}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div className="strong">{published ? 'BULLETIN DE NOTES' : 'RELEVÉ PROVISOIRE'}</div>
+          <div className="small">{rc.term?.name}</div>
+        </div>
+      </div>
+      <div className="row between mt">
+        <div>
+          <div className="strong" style={{ fontSize: 16 }}>
+            {fullName(rc.student)}
+          </div>
+          <div className="small">
+            Matricule {rc.student.matricule} · Né(e) le {formatDate(rc.student.birthDate, { day: 'numeric', month: 'long', year: 'numeric' })}
+          </div>
+        </div>
+        <div className="small" style={{ textAlign: 'right' }}>
+          Classe : <strong>{rc.cls.name}</strong>
+          <br />
+          Professeur principal : {head ? `${head.gender === 'F' ? 'Mme' : 'M.'} ${fullName(head)}` : '—'}
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Matière</th>
+            <th>Coef.</th>
+            <th>Moyenne</th>
+            <th>Moy. classe</th>
+            <th>Points</th>
+            <th>Enseignant</th>
+            <th>Appréciation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rc.lines.map((l) => (
+            <tr key={l.subject.id}>
+              <td>{l.subject.name}</td>
+              <td>{l.subject.coef}</td>
+              <td className="strong">{formatNote(l.average)}</td>
+              <td>{formatNote(l.classAverage)}</td>
+              <td>{l.points == null ? '—' : formatNote(l.points)}</td>
+              <td>{l.teacher}</td>
+              <td>{l.appreciation}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="bulletin-summary">
+        <div>
+          <div className="tiny">Moyenne générale</div>
+          <div className="strong" style={{ fontSize: 18 }}>
+            {formatNote(rc.average)}/20
+          </div>
+        </div>
+        <div>
+          <div className="tiny">Rang</div>
+          <div className="strong" style={{ fontSize: 18 }}>
+            {rc.rank ? `${rc.rank.rank}${rc.rank.rank === 1 ? 'er' : 'e'} / ${rc.rank.size}` : '—'}
+          </div>
+        </div>
+        <div>
+          <div className="tiny">Moyenne de la classe</div>
+          <div className="strong" style={{ fontSize: 18 }}>
+            {formatNote(rc.classAverage)}
+          </div>
+        </div>
+        <div>
+          <div className="tiny">Absences / retards</div>
+          <div className="strong" style={{ fontSize: 18 }}>
+            {rc.attendance.absent} / {rc.attendance.late}
+          </div>
+        </div>
+      </div>
+      <p className="mt small">
+        <strong>Appréciation générale :</strong> {rc.appreciation}.{' '}
+        {rc.average >= 12 ? 'Travail sérieux, à poursuivre.' : rc.average >= 10 ? 'Des efforts à fournir pour progresser.' : 'Travail insuffisant, un suivi est nécessaire.'}
+      </p>
+      <div className="row between mt small" style={{ marginTop: 32 }}>
+        <span>Le professeur principal</span>
+        <span>La direction</span>
+      </div>
+    </div>
+  );
+}
+
 
 export function ResultsView({ state, user, studentId }) {
   const [subjectId, setSubjectId] = useState(null);
@@ -547,7 +744,7 @@ export function ResultsView({ state, user, studentId }) {
     <>
       <PageHead title="Résultats" subtitle={`${fullName(student)} — ${cls.name} · ${byId(state.school.terms, termId)?.name}`}>
         <button className="btn btn-primary" onClick={() => setBulletin(true)}>
-          <Icon name="file" size={16} /> Voir le bulletin
+          <Icon name="file" size={16} /> {state.bulletinsPublished?.[`${cls.id}-${termId}`] ? 'Voir le bulletin' : 'Relevé provisoire'}
         </button>
       </PageHead>
       <div className="grid g-3">
@@ -642,13 +839,16 @@ export function BulletinsView({ state, user, studentId }) {
       <div className="grid g-3">
         {state.school.terms.map((t) => {
           const avg = generalAverage(state, studentId, { termId: t.id });
-          const available = avg != null;
+          const published = state.bulletinsPublished?.[`${student.classId}-${t.id}`];
+          const available = avg != null && Boolean(published);
           return (
             <Card key={t.id}>
               <div className="row between">
                 <h3>{t.name}</h3>
-                {available ? (
-                  <Badge tone={t.id === state.school.currentTermId ? 'orange' : 'green'}>{t.id === state.school.currentTermId ? 'En cours' : 'Disponible'}</Badge>
+                {published ? (
+                  <Badge tone="green" icon="check">Publié le {formatDate(published.at)}</Badge>
+                ) : avg != null ? (
+                  <Badge tone="orange">En préparation</Badge>
                 ) : (
                   <Badge>À venir</Badge>
                 )}
@@ -657,6 +857,7 @@ export function BulletinsView({ state, user, studentId }) {
                 Du {formatDate(t.start)} au {formatDate(t.end)}
               </p>
               <div className="stat-value mt">{available ? formatNote(avg) : '—'}<small> / 20</small></div>
+              {!published && avg != null && <p className="tiny muted">Le bulletin sera disponible dès sa publication par l’administration.</p>}
               <button className="btn btn-block mt" disabled={!available} onClick={() => setTermId(t.id)}>
                 <Icon name="download" size={16} /> Consulter / télécharger
               </button>
@@ -733,6 +934,7 @@ export function HomeworkView({ state, user, run, studentId, role }) {
                       ))}
                     </div>
                   )}
+                  <HomeworkCycle h={h} />
                   {h.submission?.feedback && (
                     <div className="alert alert-green small" style={{ marginTop: 10 }}>
                       <Icon name="message" size={16} /> {h.submission.feedback}
@@ -756,6 +958,29 @@ export function HomeworkView({ state, user, run, studentId, role }) {
       </div>
       {open && <SubmitModal homework={open} run={run} onClose={() => setOpen(null)} />}
     </>
+  );
+}
+
+/** Cycle complet d'un devoir : publication → notification → dépôt → correction → note. */
+export function HomeworkCycle({ h }) {
+  const sub = h.submission;
+  const steps = [
+    { label: 'Publié', date: h.createdAt, done: true },
+    { label: 'Notifié', date: h.createdAt, done: true },
+    { label: sub?.history?.length > 1 ? `Déposé (${sub.history.filter((x) => x.event !== 'correction').length}×)` : 'Déposé', date: sub?.submittedAt, done: Boolean(sub) },
+    { label: 'Corrigé', date: sub?.gradedAt, done: sub?.grade != null },
+    { label: sub?.grade != null ? `Note ${formatNote(sub.grade)}/20` : 'Note', date: sub?.gradedAt, done: sub?.grade != null },
+  ];
+  return (
+    <ol className="cycle" aria-label="Suivi du devoir">
+      {steps.map((st) => (
+        <li key={st.label} className={st.done ? 'done' : ''}>
+          <span className="cycle-dot">{st.done ? <Icon name="check" size={10} strokeWidth={3} /> : null}</span>
+          <span className="tiny strong">{st.label}</span>
+          <span className="tiny muted">{st.done && st.date ? formatDate(st.date) : '—'}</span>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -856,7 +1081,7 @@ export function AttendanceView({ state, user, studentId }) {
   );
 }
 
-export function ExitsView({ state, user, studentId }) {
+export function ExitsView({ state, user, run, studentId }) {
   if (!canAccessStudent(state, user, studentId)) return <Empty>Accès refusé.</Empty>;
   const student = byId(state.students, studentId);
   const exits = state.exits.filter((e) => e.studentId === studentId).sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
@@ -896,7 +1121,100 @@ export function ExitsView({ state, user, studentId }) {
           {!exits.length && <Empty>Aucune sortie enregistrée.</Empty>}
         </div>
       </Card>
+      {can(user, 'exits:authorize') && <ExitAuthorizations state={state} user={user} run={run} studentId={studentId} />}
     </>
+  );
+}
+
+const AUTH_STATUS = {
+  en_attente: ['En attente', 'orange'],
+  approuvee: ['Autorisée', 'green'],
+  refusee: ['Refusée', 'red'],
+  annulee: ['Annulée', 'gray'],
+};
+
+/** Parent : règles de sortie de l'enfant et demandes d'autorisation exceptionnelle. */
+function ExitAuthorizations({ state, user, run, studentId }) {
+  const student = byId(state.students, studentId);
+  const rules = state.exitRules?.[studentId] || { canLeaveAlone: false, pickupPersons: [] };
+  const [alone, setAlone] = useState(rules.canLeaveAlone);
+  const [persons, setPersons] = useState(rules.pickupPersons.join('\n'));
+  const [req, setReq] = useState({ date: todayISO(), time: '11:00', reason: '', pickupBy: rules.pickupPersons[0] || '' });
+  useEffect(() => {
+    setAlone(rules.canLeaveAlone);
+    setPersons(rules.pickupPersons.join('\n'));
+  }, [studentId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const list = (state.exitAuthorizations || []).filter((a) => a.studentId === studentId).sort((a, b) => b.at.localeCompare(a.at));
+  return (
+    <div className="grid g-2 mt">
+      <Card title={`Règles de sortie de ${student.firstName}`}>
+        <label className="check" style={{ marginBottom: 12 }}>
+          <input type="checkbox" checked={alone} onChange={(e) => setAlone(e.target.checked)} />
+          {student.firstName} peut quitter l’établissement seul(e) à la fin des cours
+        </label>
+        <Field label="Personnes autorisées à venir le/la chercher (une par ligne)">
+          <textarea className="textarea" rows={3} value={persons} onChange={(e) => setPersons(e.target.value)} />
+        </Field>
+        <button
+          className="btn btn-primary mt"
+          onClick={() => run(A.saveExitRules, { studentId, canLeaveAlone: alone, pickupPersons: persons.split('\n') }, 'Règles de sortie enregistrées.')}
+        >
+          Enregistrer les règles
+        </button>
+        <p className="tiny muted mt">Le surveillant voit ces règles au moment d’enregistrer une sortie. Vous êtes alerté(e) à chaque sortie.</p>
+      </Card>
+      <Card title="Demander une sortie exceptionnelle">
+        <form
+          className="stack"
+          style={{ gap: 10 }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (run(A.requestExitAuthorization, { ...req, studentId }, 'Demande envoyée à l’administration.').ok) setReq((r) => ({ ...r, reason: '' }));
+          }}
+        >
+          <div className="form-grid">
+            <Field label="Date">
+              <input className="input" type="date" min={todayISO()} value={req.date} onChange={(e) => setReq({ ...req, date: e.target.value })} required />
+            </Field>
+            <Field label="Heure de sortie">
+              <input className="input" type="time" value={req.time} onChange={(e) => setReq({ ...req, time: e.target.value })} required />
+            </Field>
+          </div>
+          <Field label="Motif">
+            <input className="input" value={req.reason} onChange={(e) => setReq({ ...req, reason: e.target.value })} placeholder="Rendez-vous médical, famille…" required />
+          </Field>
+          <Field label="Personne qui vient le/la chercher">
+            <input className="input" value={req.pickupBy} onChange={(e) => setReq({ ...req, pickupBy: e.target.value })} />
+          </Field>
+          <button className="btn btn-primary" type="submit">
+            <Icon name="send" size={16} /> Envoyer la demande
+          </button>
+        </form>
+        {list.length > 0 && (
+          <div className="mt">
+            {list.slice(0, 6).map((a) => (
+              <div className="list-item" key={a.id}>
+                <div className="grow">
+                  <div className="small strong">
+                    {formatDate(a.date, { weekday: 'short', day: 'numeric', month: 'short' })} à {a.time}
+                  </div>
+                  <div className="tiny muted">
+                    {a.reason}
+                    {a.comment ? ` — « ${a.comment} »` : ''}
+                  </div>
+                </div>
+                <Badge tone={AUTH_STATUS[a.status][1]}>{AUTH_STATUS[a.status][0]}</Badge>
+                {a.status === 'en_attente' && (
+                  <button className="btn btn-ghost btn-sm" onClick={() => run(A.cancelExitAuthorization, { authorizationId: a.id }, 'Demande annulée.')}>
+                    Annuler
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }
 
@@ -966,14 +1284,21 @@ export function ReceiptModal({ state, payment, onClose }) {
   );
 }
 
-export function PaymentsView({ state, user, studentId }) {
+export function PaymentsView({ state, user, run, studentId }) {
   const [receipt, setReceipt] = useState(null);
+  const [paying, setPaying] = useState(false);
   if (!canAccessStudent(state, user, studentId) || !can(user, 'payments:read')) return <Empty>Accès refusé.</Empty>;
   const student = byId(state.students, studentId);
   const pay = paymentStatus(state, studentId);
   return (
     <>
-      <PageHead title="Paiements de scolarité" subtitle={`${fullName(student)} — ${studentClass(state, student)?.name} · ${state.school.year}`} />
+      <PageHead title="Paiements de scolarité" subtitle={`${fullName(student)} — ${studentClass(state, student)?.name} · ${state.school.year}`}>
+        {can(user, 'payments:online') && pay.balance > 0 && (
+          <button className="btn btn-primary" onClick={() => setPaying(true)}>
+            <Icon name="phone" size={16} /> Payer en ligne
+          </button>
+        )}
+      </PageHead>
       {pay.overdue > 0 && (
         <div className="alert alert-red" style={{ marginBottom: 18 }}>
           <Icon name="alert" size={18} />
@@ -1031,7 +1356,14 @@ export function PaymentsView({ state, user, studentId }) {
                   <tr key={p.id}>
                     <td className="nowrap">{formatDate(p.date, { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                     <td className="num">{p.receiptNo}</td>
-                    <td>{p.method}</td>
+                    <td>
+                      {p.method}
+                      {p.channel === 'en_ligne' && (
+                        <div className="tiny muted">
+                          En ligne · {p.phone} · réf. {p.reference}
+                        </div>
+                      )}
+                    </td>
                     <td className="r num strong">{formatMoney(p.amount)}</td>
                     <td className="r">
                       <button className="btn btn-sm" onClick={() => setReceipt(p)}>
@@ -1046,7 +1378,129 @@ export function PaymentsView({ state, user, studentId }) {
         </div>
       </Card>
       {receipt && <ReceiptModal state={state} payment={receipt} onClose={() => setReceipt(null)} />}
+      {paying && (
+        <OnlinePaymentModal
+          state={state}
+          run={run}
+          studentId={studentId}
+          onClose={() => setPaying(false)}
+          onPaid={(p) => {
+            setPaying(false);
+            setReceipt(p);
+          }}
+        />
+      )}
     </>
+  );
+}
+
+/**
+ * Paiement Mobile Money en 3 étapes : montant et opérateur → code de
+ * confirmation → reçu. En démonstration, la confirmation de l'opérateur est
+ * simulée (le code s'affiche à l'écran).
+ */
+function OnlinePaymentModal({ state, run, studentId, onClose, onPaid }) {
+  const pay = paymentStatus(state, studentId);
+  const next = pay.installments.find((i) => i.status !== 'payee');
+  const suggested = pay.overdue || (next ? next.amount - next.covered : pay.balance);
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({ amount: String(suggested), method: 'Orange Money', phone: '' });
+  const [code] = useState(() => String(1000 + Math.floor(Math.random() * 9000)));
+  const [typed, setTyped] = useState('');
+  const [error, setError] = useState('');
+  const amount = Number(form.amount || 0);
+  const confirm = () => {
+    if (typed.trim() !== code) {
+      setError('Code incorrect.');
+      return;
+    }
+    const res = run(A.payOnline, { studentId, ...form }, 'Paiement confirmé : reçu disponible.');
+    if (res.ok) onPaid(res.result);
+  };
+  return (
+    <Modal
+      title="Payer la scolarité en ligne"
+      onClose={onClose}
+      footer={
+        step === 1 ? (
+          <>
+            <button className="btn" onClick={onClose}>
+              Annuler
+            </button>
+            <button
+              className="btn btn-primary"
+              disabled={!amount || form.phone.replace(/\D/g, '').length < 9 || amount > pay.balance}
+              onClick={() => {
+                setError('');
+                setStep(2);
+              }}
+            >
+              Continuer
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="btn" onClick={() => setStep(1)}>
+              Retour
+            </button>
+            <button className="btn btn-success" onClick={confirm}>
+              <Icon name="lock" size={16} /> Confirmer le paiement
+            </button>
+          </>
+        )
+      }
+    >
+      {step === 1 ? (
+        <div className="stack" style={{ gap: 14 }}>
+          <div className="alert alert-blue small">
+            Reste à payer : <strong>{formatMoney(pay.balance)}</strong>
+            {next && ` · prochaine échéance : ${next.label} (${formatDate(next.dueDate)})`}
+          </div>
+          <div className="pay-methods">
+            {A.ONLINE_METHODS.map((m) => (
+              <button key={m} type="button" className={`pay-method ${form.method === m ? 'on' : ''}`} onClick={() => setForm({ ...form, method: m })} aria-pressed={form.method === m}>
+                <span className={`pay-logo ${m === 'Orange Money' ? 'om' : 'momo'}`}>{m === 'Orange Money' ? 'OM' : 'MoMo'}</span>
+                {m}
+              </button>
+            ))}
+          </div>
+          <div className="form-grid">
+            <Field label="Montant (GNF)">
+              <input className="input num" inputMode="numeric" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value.replace(/\D/g, '') })} />
+            </Field>
+            <Field label={`Numéro ${form.method}`}>
+              <input className="input" inputMode="tel" placeholder="+224 6.. .. .. .." value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </Field>
+          </div>
+          {amount > pay.balance && <p className="small" style={{ color: 'var(--red-700)' }}>Le montant dépasse le reste à payer.</p>}
+          <div className="row" style={{ gap: 6 }}>
+            {[pay.overdue, next && next.amount - next.covered, pay.balance]
+              .filter((v, i, a) => v > 0 && a.indexOf(v) === i)
+              .map((v) => (
+                <button key={v} type="button" className="btn btn-sm" onClick={() => setForm({ ...form, amount: String(v) })}>
+                  {formatMoney(v)}
+                </button>
+              ))}
+          </div>
+        </div>
+      ) : (
+        <div className="stack" style={{ gap: 14 }}>
+          <div className="alert alert-orange small">
+            <Icon name="phone" size={16} />
+            <div>
+              Un code de confirmation a été envoyé au <strong>{form.phone}</strong> pour un paiement de <strong>{formatMoney(amount)}</strong> via {form.method}.
+              <div className="tiny" style={{ marginTop: 4 }}>
+                Démonstration : le code est <strong className="num">{code}</strong>.
+              </div>
+            </div>
+          </div>
+          <Field label="Code de confirmation">
+            <input className="input num" inputMode="numeric" maxLength={6} value={typed} onChange={(e) => setTyped(e.target.value)} autoFocus />
+          </Field>
+          {error && <p className="small" style={{ color: 'var(--red-700)' }}>{error}</p>}
+        </div>
+      )}
+    </Modal>
   );
 }
 

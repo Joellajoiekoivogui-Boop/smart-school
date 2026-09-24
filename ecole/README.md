@@ -25,7 +25,8 @@ construire `ecole/` et de publier `ecole/out`. Il suffit d’importer le dépôt
 sans rien régler. (Si le projet Vercel a `ecole` comme *Root Directory*, ce
 fichier est ignoré et Vercel détecte Next.js tout seul : ça marche aussi.)
 
-Tests de la logique métier (permissions, moyennes, paiements, appel…) :
+Tests de la logique métier (permissions, moyennes, paiements, appel,
+sécurité, alertes, gamification, migration des données…) :
 
 ```bash
 npm test
@@ -55,33 +56,68 @@ pour montrer le changement d’enfant. Tout compte créé par l’administration
 
 ## Les quatre espaces
 
-**👨‍🎓 Élève** — tableau de bord, résultats et bulletins (téléchargeables en
-PDF), devoirs avec remise en ligne, programme des cours et supports,
-**espace d’entraînement** (QCM corrigés par matière et par notion), questions
-aux enseignants, emploi du temps, progression (courbe, évolution par matière,
-difficultés identifiées), notifications.
+**👨‍🎓 Élève** — tableau de bord avec priorités du jour, **assistant IA**
+(expliquer une leçon, générer des exercices, poser une question, avec des
+indices avant la réponse), résultats et relevés, devoirs remis en ligne avec
+suivi de chaque étape, cours et **bibliothèque numérique**, **entraînement
+personnalisé** (séances adaptées aux notions fragiles) avec **gamification**
+(XP, niveaux, séries, objectif hebdomadaire, badges, sans classement entre
+élèves), emploi du temps du jour, progression, messages, notifications.
 
-**👨‍👩‍👦 Parent** — vue globale par enfant (moyenne, présence du jour,
-dernière sortie, devoirs en attente, scolarité payée), résultats, bulletins,
-devoirs, présences et absences, sorties, paiements (échéances, impayés,
-reçus), emploi du temps, messagerie avec les enseignants, notifications.
+**👨‍👩‍👦 Parent** — vue globale par enfant, **fiche de vie scolaire**, résultats,
+bulletins publiés, devoirs, présences, **sorties et autorisations** (règles de
+sortie, personnes autorisées, demandes de sortie exceptionnelle), **paiement
+Mobile Money** (Orange Money, MTN MoMo) avec reçu, messagerie « à propos de »
+chaque enfant, alertes intelligentes.
 
-**👨‍🏫 Enseignant** — classes, élèves avec **fiche de suivi individuel**
-(notes par matière vs classe, absences, devoirs rendus, progression,
-difficultés identifiées), publication et correction des devoirs, saisie des
-notes, performances par classe et par notion, **appel** (présent / absent /
-retard), emploi du temps, messages avec élèves et parents, annonces à une
-classe.
+**👨‍🏫 Enseignant** — priorités (appels à faire, copies à corriger, élèves en
+baisse), classes, fiche élève (synthèse + fiche de vie, observations
+pédagogiques), devoirs (publication → dépôt → correction → note → historique),
+saisie des notes, bibliothèque de sa matière, progression, appel, emploi du
+temps du jour, messages, annonces à une classe.
 
-**🏫 Administration** — élèves (inscription avec création des comptes élève
-et parent, affectation, dossiers, fratries), enseignants (matières, classes),
-classes et niveaux, matières (coefficients, volumes horaires), emplois du
-temps (conflits d’enseignant refusés), notes et bulletins, présences
-(justification des absences), sorties, scolarité (frais, paiements en
-espèces / Orange Money / MTN MoMo / virement, reçus, échéances, impayés),
-communication (tous, élèves, parents, enseignants, une classe, parents d’une
-classe), paramètres (année scolaire, trimestres, calendrier, matrice des
-rôles).
+**🏫 Administration** — priorités, élèves (inscription avec comptes et mots de
+passe provisoires), enseignants, classes, matières, emplois du temps,
+**génération et publication des bulletins** (impression de toute une classe),
+présences, sorties (validation des demandes, contrôle des règles parentales),
+scolarité (**tableau financier**, relances, reçus), communication (annonces +
+**alertes SMS / WhatsApp**), bibliothèque, **sécurité & journal d’audit**,
+**exports Excel** (élèves, résultats, paiements, présences, journal).
+
+### Modules transverses
+
+- **Alertes intelligentes** : absence, retard, devoir non rendu, baisse des
+  résultats (−2 points sur les dernières notes), échéance de paiement, sortie,
+  bulletin publié, décision d’autorisation. Chaque règle s’active ou se coupe
+  dans *Communication → Alertes*.
+- **Fiche de vie scolaire** : chronologie de l’élève sur l’année (notes,
+  présences, devoirs, sorties exceptionnelles, entraînement, observations et
+  activités), filtrable et imprimable.
+- **Mode hors connexion** : application installable (PWA) ; les pages déjà
+  chargées et toutes les données restent consultables sans Internet, un
+  bandeau signale la perte de connexion.
+- **Sécurité** : mots de passe hachés (sel + SHA-256 itéré), verrouillage 5 min
+  après 5 échecs, déconnexion après 30 min d’inactivité, mot de passe
+  provisoire à changer à la 1re connexion, journal des actions sensibles.
+
+### Assistant IA (Claude)
+
+La fonction serveur `api/assistant.js` (à la racine du dépôt) interroge Claude
+(`claude-opus-5`, effort « low », repli automatique en cas de refus). Pour
+l’activer sur Vercel : **Settings → Environment Variables →
+`ANTHROPIC_API_KEY`**, puis redéployer. Sans clé ou sans connexion,
+l’assistant bascule sur son moteur local (banque d’exercices, programme,
+bibliothèque) : il reste utilisable, avec des réponses plus simples.
+
+### Ce qui est simulé en démonstration
+
+| Fonction | Démo | À brancher pour la production |
+| --- | --- | --- |
+| Données | Navigateur (localStorage) | API + base de données partagée |
+| SMS / WhatsApp | File d’envoi visible dans *Communication* | Fournisseur SMS, numéro WhatsApp de l’école |
+| Mobile Money | Code de confirmation affiché à l’écran | Compte marchand Orange Money / MTN MoMo |
+| Assistant IA | Moteur local | Clé `ANTHROPIC_API_KEY` sur Vercel |
+| Fichiers | 750 Ko max., stockés localement | Stockage de fichiers (ex. Vercel Blob, S3) |
 
 ## Rôles et permissions
 

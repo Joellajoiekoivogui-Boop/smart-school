@@ -4,6 +4,7 @@
  */
 import { can, canAccessStudent } from './permissions.js';
 import { toISODate } from './seed.js';
+import { smartAlerts } from './alerts.js';
 
 export function round1(n) {
   return n == null || Number.isNaN(n) ? null : Math.round(n * 10) / 10;
@@ -374,6 +375,8 @@ export function notificationsFor(state, user, now = new Date()) {
         items.push({
           id: `att-${a.id}`,
           kind: a.status === 'absent' ? 'absence' : 'retard',
+          severity: a.status === 'absent' ? 'critique' : 'attention',
+          link: 'presences',
           title: `${prefix}${a.status === 'absent' ? 'Absence' : 'Retard'} signalé(e)`,
           body: a.status === 'absent' ? `Absent(e) le ${formatDate(a.date)}` : `Arrivée à ${a.arrival} le ${formatDate(a.date)}`,
           at: `${a.date}T09:00:00.000Z`,
@@ -384,6 +387,8 @@ export function notificationsFor(state, user, now = new Date()) {
         items.push({
           id: `pay-overdue-${sid}-${pay.paid}`,
           kind: 'paiement',
+          severity: 'critique',
+          link: 'paiements',
           title: `${prefix}Échéance de scolarité en retard`,
           body: `Montant en retard : ${formatMoney(pay.overdue)}`,
           at: now.toISOString(),
@@ -406,6 +411,8 @@ export function notificationsFor(state, user, now = new Date()) {
       });
     }
   }
+
+  items.push(...smartAlerts(state, user, now));
 
   const read = new Set(state.readNotifications?.[user.id] || []);
   return items

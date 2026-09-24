@@ -9,9 +9,16 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { buildSeed } from './seed.js';
+import { migrateState } from './seed-extra.js';
+import { verifyPassword } from './crypto.js';
+import { appendAudit } from './actions.js';
 
 const STATE_KEY = 'n1_state_v1';
 const SESSION_KEY = 'n1_session_v1';
+const LOCK_KEY = 'n1_login_attempts';
+const MAX_ATTEMPTS = 5;
+const LOCK_MS = 5 * 60 * 1000;
+const IDLE_MS = 30 * 60 * 1000;
 
 const StoreContext = createContext(null);
 
@@ -40,11 +47,13 @@ export function StoreProvider({ children }) {
   const stateRef = useRef(null);
 
   useEffect(() => {
-    const stored = load(STATE_KEY);
-    const initial = stored?.version === 1 ? stored : buildSeed(new Date());
+    // Les données d'une version précédente sont mises à niveau, jamais effacées.
+    const initial = migrateState(load(STATE_KEY)) || buildSeed(new Date());
     stateRef.current = initial;
     setState(initial);
-    setUserId(load(SESSION_KEY)?.userId || null);
+    const session = load(SESSION_KEY);
+    if (session?.userId && Date.now() - (session.lastActive || 0) < IDLE_MS) setUserId(session.userId);
+    else save(SESSION_KEY, null);
   }, []);
 
   useEffect(() => {
@@ -70,6 +79,7 @@ export function StoreProvider({ children }) {
       const draft = structuredClone(current);
       try {
         const result = action(draft, actor, payload);
+        appendAudit(draft, actor, action, payload);
         stateRef.current = draft;
         setState(draft);
         if (successMessage) notify(successMessage);
@@ -82,20 +92,63 @@ export function StoreProvider({ children }) {
     [userId, notify],
   );
 
+  /**
+   * Connexion : vérification de l'empreinte du mot de passe, verrouillage
+   * temporaire après 5 échecs sur un même identifiant.
+   * Renvoie { user } ou { error }.
+   */
   const login = useCallback((email, password) => {
-    const u = stateRef.current.users.find(
-      (x) => x.email.toLowerCase() === String(email).trim().toLowerCase() && x.password === password,
-    );
-    if (!u) return null;
+    const key = String(email).trim().toLowerCase();
+    const attempts = load(LOCK_KEY) || {};
+    const entry = attempts[key] || { count: 0, until: 0 };
+    if (entry.until > Date.now()) {
+      const min = Math.ceil((entry.until - Date.now()) / 60000);
+      return { error: `Trop de tentatives. Réessayez dans ${min} min.` };
+    }
+    const u = stateRef.current.users.find((x) => x.email.toLowerCase() === key);
+    if (!u || !verifyPassword(u, password)) {
+      entry.count += 1;
+      if (entry.count >= MAX_ATTEMPTS) {
+        entry.until = Date.now() + LOCK_MS;
+        entry.count = 0;
+      }
+      attempts[key] = entry;
+      save(LOCK_KEY, attempts);
+      return { error: 'Adresse e-mail ou mot de passe incorrect.' };
+    }
+    delete attempts[key];
+    save(LOCK_KEY, attempts);
     setUserId(u.id);
-    save(SESSION_KEY, { userId: u.id });
-    return u;
+    save(SESSION_KEY, { userId: u.id, lastActive: Date.now() });
+    return { user: u };
   }, []);
 
   const logout = useCallback(() => {
     setUserId(null);
     save(SESSION_KEY, null);
   }, []);
+
+  // Déconnexion automatique après 30 minutes d'inactivité.
+  useEffect(() => {
+    if (!userId) return undefined;
+    let last = Date.now();
+    const touch = () => {
+      last = Date.now();
+    };
+    const persist = setInterval(() => {
+      if (Date.now() - last > IDLE_MS) {
+        setUserId(null);
+        save(SESSION_KEY, null);
+        setToast({ message: 'Session expirée après 30 minutes d’inactivité.', type: 'error', id: Date.now() });
+      } else save(SESSION_KEY, { userId, lastActive: last });
+    }, 30000);
+    const events = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach((e) => window.addEventListener(e, touch, { passive: true }));
+    return () => {
+      clearInterval(persist);
+      events.forEach((e) => window.removeEventListener(e, touch));
+    };
+  }, [userId]);
 
   const resetDemo = useCallback(() => {
     const fresh = buildSeed(new Date());

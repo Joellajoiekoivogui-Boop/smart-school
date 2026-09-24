@@ -21,7 +21,9 @@ import {
 import { PERMISSIONS, ROLES } from '@/lib/permissions';
 import { PAYMENT_METHODS } from '@/lib/seed';
 import * as A from '@/lib/actions';
-import { AnnouncementComposer, AttendanceBadge, BulletinModal, ReceiptModal, TimetableGrid, targetLabel, todayISO } from './shared';
+import { AnnouncementComposer, AttendanceBadge, BulletinModal, BulletinSheet, ReceiptModal, TimetableGrid, targetLabel, todayISO, PrioritiesCard } from './shared';
+import { CredentialsModal } from './account';
+import { downloadCSV } from '@/lib/csv';
 import { GradesView, RollCallView, StudentFile } from './enseignant';
 
 const nowTime = () => new Date().toTimeString().slice(0, 5);
@@ -42,7 +44,7 @@ function ConfirmButton({ onConfirm, children = 'Supprimer', message = 'Confirmer
 
 // ================================================================ Dashboard
 
-export function AdminDashboard({ state, go }) {
+export function AdminDashboard({ state, user, go }) {
   const today = todayISO();
   const todayAtt = state.attendance.filter((a) => a.date === today);
   const present = todayAtt.filter((a) => a.status !== 'absent').length;
@@ -77,6 +79,7 @@ export function AdminDashboard({ state, go }) {
           </button>
         </div>
       </Reveal>
+      <PrioritiesCard state={state} user={user} go={go} />
       <div className="grid g-4 mt">
         <Stat label="Élèves inscrits" value={state.students.length} icon="user" tone="blue" sub={`${state.classes.length} classes · ${state.teachers.length} enseignants`} />
         <Stat label="Présence aujourd’hui" value={todayAtt.length ? `${Math.round((present / todayAtt.length) * 100)} %` : '—'} icon="checkCircle" tone="green" sub={`Appel fait dans ${callsDone}/${state.classes.length} classes`} />
@@ -159,13 +162,28 @@ export function AdminStudentsView({ state, user, run, params, go }) {
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState(null);
   const [editingParent, setEditingParent] = useState(null);
-  if (params[0]) return <StudentFile state={state} user={user} studentId={params[0]} go={go} onBack={() => go('eleves')} />;
+  const [creds, setCreds] = useState(null);
+  if (params[0]) return <StudentFile state={state} user={user} run={run} studentId={params[0]} go={go} onBack={() => go('eleves')} />;
   const students = state.students
     .filter((s) => (!classId || s.classId === classId) && `${fullName(s)} ${s.matricule}`.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => a.lastName.localeCompare(b.lastName));
   return (
     <>
       <PageHead title="Élèves" subtitle={`${state.students.length} élèves inscrits — inscriptions, affectations et dossiers.`}>
+        <button
+          className="btn"
+          onClick={() =>
+            downloadCSV('eleves-n1', [
+              ['Matricule', 'Nom', 'Prénom', 'Classe', 'Sexe', 'Naissance', 'Parent', 'Téléphone parent', 'Moyenne', 'Scolarité payée (%)'],
+              ...students.map((s) => {
+                const parent = byId(state.parents, s.parentIds?.[0]);
+                return [s.matricule, s.lastName, s.firstName, studentClass(state, s)?.name, s.gender, s.birthDate, parent ? `${parent.title} ${fullName(parent)}` : '', parent?.phone || '', Math.round((generalAverage(state, s.id) || 0) * 10) / 10, Math.round(paymentStatus(state, s.id).percent)];
+              }),
+            ])
+          }
+        >
+          <Icon name="download" size={16} /> Excel
+        </button>
         <button className="btn btn-primary" onClick={() => setEditing({})}>
           <Icon name="plus" size={16} /> Inscrire un élève
         </button>
@@ -233,13 +251,14 @@ export function AdminStudentsView({ state, user, run, params, go }) {
           {!students.length && <Empty>Aucun élève trouvé.</Empty>}
         </div>
       </Card>
-      {editing && <StudentModal state={state} run={run} student={editing} onClose={() => setEditing(null)} />}
+      {editing && <StudentModal state={state} run={run} student={editing} onClose={() => setEditing(null)} onCreated={setCreds} />}
+      {creds && <CredentialsModal credentials={creds} onClose={() => setCreds(null)} />}
       {editingParent && <ParentModal run={run} parent={editingParent} onClose={() => setEditingParent(null)} />}
     </>
   );
 }
 
-function StudentModal({ state, run, student, onClose }) {
+function StudentModal({ state, run, student, onClose, onCreated }) {
   const isNew = !student.id;
   const [form, setForm] = useState({
     id: student.id,
@@ -264,7 +283,10 @@ function StudentModal({ state, run, student, onClose }) {
       delete payload.parentLastName;
     } else delete payload.parentId;
     const res = run(A.saveStudent, payload, isNew ? 'Élève inscrit. Ses identifiants de connexion ont été créés.' : 'Dossier mis à jour.');
-    if (res.ok) onClose();
+    if (res.ok) {
+      onClose();
+      if (res.result?.credentials?.length) onCreated?.(res.result.credentials);
+    }
   };
   return (
     <Modal
@@ -374,6 +396,7 @@ function ParentModal({ run, parent, onClose }) {
 
 export function AdminTeachersView({ state, run }) {
   const [editing, setEditing] = useState(null);
+  const [creds, setCreds] = useState(null);
   const today = todayISO();
   return (
     <>
@@ -416,13 +439,14 @@ export function AdminTeachersView({ state, run }) {
           );
         })}
       </div>
-      {editing && <TeacherModal state={state} run={run} teacher={editing} onClose={() => setEditing(null)} />}
+      {editing && <TeacherModal state={state} run={run} teacher={editing} onClose={() => setEditing(null)} onCreated={setCreds} />}
+      {creds && <CredentialsModal credentials={creds} onClose={() => setCreds(null)} />}
       <p className="tiny muted mt">Mise à jour le {formatDate(today)}.</p>
     </>
   );
 }
 
-function TeacherModal({ state, run, teacher, onClose }) {
+function TeacherModal({ state, run, teacher, onClose, onCreated }) {
   const [form, setForm] = useState({
     id: teacher.id,
     firstName: teacher.firstName || '',
@@ -436,7 +460,10 @@ function TeacherModal({ state, run, teacher, onClose }) {
   const toggle = (k, id) => setForm((f) => ({ ...f, [k]: f[k].includes(id) ? f[k].filter((x) => x !== id) : [...f[k], id] }));
   const submit = () => {
     const res = run(A.saveTeacher, form, teacher.id ? 'Enseignant mis à jour.' : 'Enseignant ajouté. Ses identifiants ont été créés.');
-    if (res.ok) onClose();
+    if (res.ok) {
+      onClose();
+      if (res.result?.credentials?.length) onCreated?.(res.result.credentials);
+    }
   };
   return (
     <Modal
@@ -766,12 +793,25 @@ export function AdminTimetableView({ state, run }) {
 // ================================================================ Notes & bulletins
 
 export function AdminGradesView(props) {
-  const { state } = props;
+  const { state, run } = props;
   const [tab, setTab] = useState('resultats');
   const [classId, setClassId] = useState(state.classes[0]?.id);
   const [bulletin, setBulletin] = useState(null);
+  const [batch, setBatch] = useState(false);
   const termId = state.school.currentTermId;
   const ranking = classAverages(state, classId, { termId });
+  const published = state.bulletinsPublished?.[`${classId}-${termId}`];
+  const cls = byId(state.classes, classId);
+  const subjectAvg = (sid, subjectId) => {
+    const evs = state.evaluations.filter((e) => e.subjectId === subjectId && e.termId === termId && e.scores[sid] != null);
+    const co = evs.reduce((a, e) => a + e.coef, 0);
+    return co ? evs.reduce((a, e) => a + e.scores[sid] * e.coef, 0) / co : null;
+  };
+  const exportCSV = () =>
+    downloadCSV(`resultats-${cls?.name}-${termId}`, [
+      ['Rang', 'Élève', ...state.subjects.map((s) => `${s.name} (coef ${s.coef})`), 'Moyenne générale'],
+      ...ranking.map((r, i) => [i + 1, fullName(r.student), ...state.subjects.map((s) => (subjectAvg(r.student.id, s.id) == null ? '' : Math.round(subjectAvg(r.student.id, s.id) * 100) / 100)), Math.round(r.average * 100) / 100]),
+    ]);
   return (
     <>
       <PageHead title="Notes & bulletins" subtitle={`${byId(state.school.terms, termId)?.name} — résultats par classe, saisie et édition des bulletins.`} />
@@ -783,6 +823,39 @@ export function AdminGradesView(props) {
           <>
             <div className="row" style={{ marginBottom: 16 }}>
               <Tabs value={classId} onChange={setClassId} tabs={state.classes.map((c) => ({ value: c.id, label: c.name }))} />
+            </div>
+            <div className={`alert ${published ? 'alert-green' : 'alert-orange'}`} style={{ marginBottom: 16, alignItems: 'center' }}>
+              <Icon name={published ? 'checkCircle' : 'file'} size={18} />
+              <div style={{ flex: 1 }}>
+                {published ? (
+                  <>
+                    Bulletins de la {cls?.name} publiés le {formatDate(published.at, { day: 'numeric', month: 'long' })} : visibles par les élèves et les parents, qui ont été alertés.
+                  </>
+                ) : (
+                  <>Les bulletins de la {cls?.name} sont générés automatiquement à partir des notes. Vérifiez-les puis publiez-les pour les rendre disponibles aux familles.</>
+                )}
+              </div>
+              <div className="row">
+                <button className="btn btn-sm" onClick={exportCSV}>
+                  <Icon name="download" size={14} /> Excel
+                </button>
+                <button className="btn btn-sm" onClick={() => setBatch(true)} disabled={!ranking.length}>
+                  <Icon name="printer" size={14} /> Imprimer toute la classe
+                </button>
+                {published ? (
+                  <button className="btn btn-sm" onClick={() => run(A.publishBulletins, { classId, termId, publish: false }, 'Publication retirée.')}>
+                    Retirer
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-sm btn-success"
+                    disabled={!ranking.length}
+                    onClick={() => window.confirm(`Publier les ${ranking.length} bulletins de la ${cls?.name} ?`) && run(A.publishBulletins, { classId, termId }, 'Bulletins publiés : familles alertées.')}
+                  >
+                    <Icon name="send" size={14} /> Publier
+                  </button>
+                )}
+              </div>
             </div>
             <Card flush>
               <div className="table-wrap">
@@ -834,6 +907,31 @@ export function AdminGradesView(props) {
         )}
       </div>
       {bulletin && <BulletinModal state={state} studentId={bulletin} termId={termId} onClose={() => setBulletin(null)} />}
+      {batch && (
+        <Modal
+          title={`Bulletins — ${cls?.name} (${ranking.length})`}
+          wide
+          onClose={() => setBatch(false)}
+          footer={
+            <>
+              <button className="btn" onClick={() => setBatch(false)}>
+                Fermer
+              </button>
+              <button className="btn btn-primary" onClick={() => window.print()}>
+                <Icon name="printer" size={16} /> Imprimer / PDF
+              </button>
+            </>
+          }
+        >
+          <div className="print-area">
+            {ranking.map((r) => (
+              <div className="page-break" key={r.student.id}>
+                <BulletinSheet state={state} studentId={r.student.id} termId={termId} />
+              </div>
+            ))}
+          </div>
+        </Modal>
+      )}
     </>
   );
 }
@@ -870,6 +968,18 @@ export function AdminAttendanceView(props) {
             <div className="row" style={{ marginBottom: 16 }}>
               <input className="input input-sm" type="date" style={{ width: 170 }} value={date} max={todayISO()} onChange={(e) => setDate(e.target.value)} aria-label="Date" />
               <Tabs value={filter} onChange={setFilter} tabs={[{ value: 'anomalies', label: 'Absences & retards' }, { value: 'tous', label: 'Tous' }]} />
+              <button
+                className="btn btn-sm"
+                onClick={() =>
+                  downloadCSV(`presences-${date}`, [
+                    ['Date', 'Classe', 'Élève', 'Statut', 'Arrivée', 'Justifiée'],
+                    ...dayRecords.map((a) => [a.date, byId(state.classes, a.classId)?.name, fullName(byId(state.students, a.studentId)), a.status, a.arrival || '', a.status === 'absent' ? (a.justified ? 'oui' : 'non') : '']),
+                  ])
+                }
+                disabled={!dayRecords.length}
+              >
+                <Icon name="download" size={14} /> Excel
+              </button>
             </div>
             <div className="grid g-4" style={{ marginBottom: 16 }}>
               {byClass.map(({ c, total, absent, late }) => (
@@ -954,6 +1064,7 @@ export function AdminExitsView({ state, run }) {
   return (
     <>
       <PageHead title="Sorties" subtitle="Enregistrez les sorties des élèves : les parents les voient en temps réel." />
+      <PendingAuthorizations state={state} run={run} />
       <div className="grid g-main">
         <Card title="Dernières sorties" flush action={<input className="input input-sm" style={{ width: 200, marginRight: 20 }} placeholder="Rechercher…" value={search} onChange={(e) => setSearch(e.target.value)} />}>
           <div className="table-wrap">
@@ -1010,8 +1121,14 @@ export function AdminExitsView({ state, run }) {
               <input className="input" value={form.reason} onChange={set('reason')} required />
             </Field>
             <Field label="Accompagné par">
-              <input className="input" value={form.accompaniedBy} onChange={set('accompaniedBy')} />
+              <input className="input" value={form.accompaniedBy} onChange={set('accompaniedBy')} list="pickup-persons" />
+              <datalist id="pickup-persons">
+                {(state.exitRules?.[form.studentId]?.pickupPersons || []).map((p) => (
+                  <option key={p} value={p} />
+                ))}
+              </datalist>
             </Field>
+            <ExitCheck state={state} studentId={form.studentId} date={form.date} type={form.type} accompaniedBy={form.accompaniedBy} />
             <button className="btn btn-primary" type="submit">
               <Icon name="door" size={16} /> Enregistrer la sortie
             </button>
@@ -1019,6 +1136,76 @@ export function AdminExitsView({ state, run }) {
         </Card>
       </div>
     </>
+  );
+}
+
+/** Rappelle au surveillant les règles fixées par les parents et les autorisations du jour. */
+function ExitCheck({ state, studentId, date, type, accompaniedBy }) {
+  const rules = state.exitRules?.[studentId];
+  const auths = (state.exitAuthorizations || []).filter((a) => a.studentId === studentId && a.date === date && a.status === 'approuvee');
+  const alone = /seul/i.test(accompaniedBy || '');
+  const problems = [];
+  if (rules && !rules.canLeaveAlone && alone) problems.push('Les parents n’autorisent pas une sortie seul(e).');
+  if (type === 'exceptionnelle' && !auths.length && state.school.exitRules?.requireAuthorizationBeforeEnd) problems.push('Aucune autorisation parentale approuvée pour aujourd’hui.');
+  return (
+    <div className={`alert ${problems.length ? 'alert-red' : 'alert-blue'} small`}>
+      <Icon name={problems.length ? 'alert' : 'shield'} size={16} />
+      <div>
+        {problems.map((p) => (
+          <div key={p} className="strong">
+            {p}
+          </div>
+        ))}
+        <div>
+          {rules ? (rules.canLeaveAlone ? 'Peut sortir seul(e).' : 'Ne peut pas sortir seul(e).') : 'Aucune règle renseignée par les parents.'}
+          {rules?.pickupPersons?.length ? ` Personnes autorisées : ${rules.pickupPersons.join(', ')}.` : ''}
+        </div>
+        {auths.map((a) => (
+          <div key={a.id}>
+            ✅ Autorisation du jour : {a.time} — {a.reason}
+            {a.pickupBy ? ` (${a.pickupBy})` : ''}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PendingAuthorizations({ state, run }) {
+  const pending = (state.exitAuthorizations || []).filter((a) => a.status === 'en_attente').sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  if (!pending.length) return null;
+  return (
+    <Card title={`Demandes d’autorisation de sortie (${pending.length})`} className="priorities" >
+      {pending.map((a) => {
+        const s = byId(state.students, a.studentId);
+        return (
+          <div className="list-item" key={a.id}>
+            <Avatar name={fullName(s)} />
+            <div className="grow">
+              <div className="strong small">
+                {fullName(s)} · {studentClass(state, s)?.name}
+              </div>
+              <div className="tiny muted">
+                {formatDate(a.date, { weekday: 'long', day: 'numeric', month: 'long' })} à {a.time} — {a.reason}
+                {a.pickupBy ? ` · récupéré(e) par ${a.pickupBy}` : ''} · demandé par {byId(state.users, a.requestedBy)?.name}
+              </div>
+            </div>
+            <button className="btn btn-sm btn-success" onClick={() => run(A.decideExitAuthorization, { authorizationId: a.id, approve: true }, 'Sortie autorisée : parent alerté.')}>
+              Autoriser
+            </button>
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={() => {
+                const comment = window.prompt('Motif du refus (facultatif) :') ?? null;
+                if (comment !== null) run(A.decideExitAuthorization, { authorizationId: a.id, approve: false, comment }, 'Demande refusée : parent alerté.');
+              }}
+            >
+              Refuser
+            </button>
+          </div>
+        );
+      })}
+    </Card>
   );
 }
 
@@ -1045,6 +1232,24 @@ export function AdminFeesView({ state, run }) {
   const byMethod = PAYMENT_METHODS.map((m) => ({ label: m, value: state.payments.filter((p) => p.method === m).reduce((a, p) => a + p.amount, 0) }));
   const maxMethod = Math.max(...byMethod.map((m) => m.value), 1);
   const history = state.payments.slice().sort((a, b) => b.date.localeCompare(a.date) || b.receiptNo.localeCompare(a.receiptNo));
+  // Encaissements par mois (tableau de bord financier).
+  const months = {};
+  for (const p of state.payments) months[p.date.slice(0, 7)] = (months[p.date.slice(0, 7)] || 0) + p.amount;
+  const monthRows = Object.entries(months)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([m, v]) => ({ label: new Date(`${m}-15T12:00:00`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }), value: v }));
+  const online = state.payments.filter((p) => p.channel === 'en_ligne');
+  const onlineTotal = online.reduce((a, p) => a + p.amount, 0);
+  const upcoming = state.school.installments
+    .filter((i) => i.dueDate >= today)
+    .map((i) => ({
+      ...i,
+      due: state.students.reduce((a, s) => {
+        const inst = paymentStatus(state, s.id, today).installments.find((x) => x.id === i.id);
+        return a + (inst ? inst.amount - inst.covered : 0);
+      }, 0),
+    }));
+  const kFormat = (v) => `${Math.round(v / 1000).toLocaleString('fr-FR')} k`;
 
   return (
     <>
@@ -1060,14 +1265,77 @@ export function AdminFeesView({ state, run }) {
         <Stat label="Impayés échus" value={formatMoney(totals.overdue)} icon="alert" tone="red" />
       </div>
       <div className="row mt" style={{ marginBottom: 16 }}>
-        <Tabs value={tab} onChange={setTab} tabs={[{ value: 'situation', label: 'Situation par élève' }, { value: 'impayes', label: 'Impayés' }, { value: 'historique', label: 'Historique & reçus' }]} />
-        {tab !== 'historique' && (
+        <Tabs
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { value: 'situation', label: 'Situation par élève' },
+            { value: 'impayes', label: 'Impayés' },
+            { value: 'finances', label: 'Tableau financier' },
+            { value: 'historique', label: 'Historique & reçus' },
+          ]}
+        />
+        {(tab === 'situation' || tab === 'impayes') && (
           <Select className="select input-sm" style={{ width: 180 }} value={classId} onChange={setClassId} options={[{ value: '', label: 'Toutes les classes' }, ...state.classes.map((c) => ({ value: c.id, label: c.name }))]} />
         )}
       </div>
-      {tab === 'historique' ? (
+      {tab === 'finances' ? (
+        <div className="grid g-2">
+          <Card title="Encaissements par mois">
+            <HBars rows={monthRows} max={Math.max(...monthRows.map((m) => m.value), 1)} format={kFormat} />
+            <p className="tiny muted mt">Montants en milliers de GNF.</p>
+          </Card>
+          <div className="stack">
+            <Card title="Canaux de paiement">
+              <dl className="kv">
+                <dt>Au guichet</dt>
+                <dd className="num">{formatMoney(totals.paid - onlineTotal)}</dd>
+                <dt>En ligne (Mobile Money)</dt>
+                <dd className="num">
+                  {formatMoney(onlineTotal)} · {online.length} transaction(s)
+                </dd>
+              </dl>
+              <div className="mt">
+                <HBars rows={byMethod} max={maxMethod} format={kFormat} />
+              </div>
+            </Card>
+            <Card title="Prochaines échéances">
+              {upcoming.map((i) => (
+                <div className="list-item" key={i.id}>
+                  <div className="grow">
+                    <div className="strong small">{i.label}</div>
+                    <div className="tiny muted">Avant le {formatDate(i.dueDate, { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                  </div>
+                  <span className="num small strong">{formatMoney(i.due)}</span>
+                </div>
+              ))}
+              {!upcoming.length && <Empty>Aucune échéance à venir.</Empty>}
+            </Card>
+          </div>
+        </div>
+      ) : tab === 'historique' ? (
         <div className="grid g-main">
-          <Card flush>
+          <Card
+            flush
+            title="Transactions"
+            action={
+              <button
+                className="btn btn-sm"
+                style={{ marginRight: 20 }}
+                onClick={() =>
+                  downloadCSV('paiements-n1', [
+                    ['Reçu', 'Date', 'Élève', 'Classe', 'Mode', 'Canal', 'Référence', 'Montant (GNF)'],
+                    ...history.map((p) => {
+                      const st = byId(state.students, p.studentId);
+                      return [p.receiptNo, p.date, st ? fullName(st) : p.studentId, studentClass(state, st)?.name || '', p.method, p.channel === 'en_ligne' ? 'En ligne' : 'Guichet', p.reference || '', p.amount];
+                    }),
+                  ])
+                }
+              >
+                <Icon name="download" size={14} /> Excel
+              </button>
+            }
+          >
             <div className="table-wrap">
               <table className="table">
                 <thead>
@@ -1134,7 +1402,12 @@ export function AdminFeesView({ state, run }) {
                     <td>
                       {p.percent >= 100 ? <Badge tone="green">Soldé</Badge> : p.overdue > 0 ? <Badge tone="red">{formatMoney(p.overdue)} en retard</Badge> : <Badge tone="blue">À jour</Badge>}
                     </td>
-                    <td className="r">
+                    <td className="r nowrap">
+                      {p.balance > 0 && (
+                        <button className="btn btn-sm btn-ghost" title="Envoyer un rappel SMS / WhatsApp au parent" onClick={() => run(A.sendPaymentReminder, { studentId: s.id }, 'Rappel envoyé au parent.')}>
+                          Relancer
+                        </button>
+                      )}{' '}
                       {p.balance > 0 && (
                         <button className="btn btn-sm" onClick={() => setPaying({ studentId: s.id, amount: p.overdue || p.installments.find((i) => i.status !== 'payee')?.amount - (p.installments.find((i) => i.status !== 'payee')?.covered || 0) })}>
                           Encaisser
@@ -1204,11 +1477,105 @@ function PaymentModal({ state, run, initial, onClose, onDone }) {
 
 // ================================================================ Communication
 
-export function AdminCommunicationView({ state, user, run }) {
+export function AdminCommunicationView(props) {
+  const [tab, setTab] = useState('annonces');
+  return (
+    <>
+      <PageHead title="Communication" subtitle="Annonces ciblées et alertes automatiques par SMS / WhatsApp aux familles.">
+        <Tabs value={tab} onChange={setTab} tabs={[{ value: 'annonces', label: 'Annonces' }, { value: 'alertes', label: 'Alertes SMS & WhatsApp' }]} />
+      </PageHead>
+      {tab === 'annonces' ? <AnnouncementsPanel {...props} /> : <AlertsPanel {...props} />}
+    </>
+  );
+}
+
+const RULE_LABELS = {
+  absence: 'Absence',
+  retard: 'Retard',
+  devoirNonRendu: 'Devoir non rendu',
+  baisseResultats: 'Baisse des résultats',
+  echeance: 'Échéance de paiement',
+  sortie: 'Sortie de l’établissement',
+};
+
+function AlertsPanel({ state, run }) {
+  const channels = state.school.alertChannels || {};
+  const rules = state.school.alertRules || {};
+  const [filter, setFilter] = useState('');
+  const out = (state.alertsOutbox || []).filter((o) => !filter || o.channel === filter);
+  return (
+    <div className="grid g-main">
+      <Card
+        title={`File d’envoi (${state.alertsOutbox?.length || 0})`}
+        flush
+        action={<Select className="select input-sm" style={{ width: 150, marginRight: 20 }} value={filter} onChange={setFilter} options={[{ value: '', label: 'Tous canaux' }, { value: 'sms', label: 'SMS' }, { value: 'whatsapp', label: 'WhatsApp' }]} />}
+      >
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Quand</th>
+                <th>Canal</th>
+                <th>Destinataire</th>
+                <th>Message</th>
+                <th>État</th>
+              </tr>
+            </thead>
+            <tbody>
+              {out.slice(0, 100).map((o) => (
+                <tr key={o.id}>
+                  <td className="nowrap small muted">{timeAgo(o.at)}</td>
+                  <td>
+                    <Badge tone={o.channel === 'sms' ? 'blue' : 'green'}>{o.channel === 'sms' ? 'SMS' : 'WhatsApp'}</Badge>
+                  </td>
+                  <td className="small">
+                    <div className="strong">{o.toName}</div>
+                    <div className="tiny muted num">{o.to}</div>
+                  </td>
+                  <td className="small">{o.message}</td>
+                  <td>
+                    <Badge tone="orange">Simulé</Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!out.length && <Empty>Aucune alerte pour le moment. Faites l’appel, enregistrez une sortie ou un paiement pour en générer.</Empty>}
+        </div>
+      </Card>
+      <div className="stack">
+        <Card title="Canaux d’envoi">
+          {[
+            ['sms', 'SMS'],
+            ['whatsapp', 'WhatsApp'],
+          ].map(([k, l]) => (
+            <label className="check" key={k} style={{ marginRight: 8, marginBottom: 8 }}>
+              <input type="checkbox" checked={Boolean(channels[k])} onChange={(e) => run(A.updateAlertSettings, { channels: { [k]: e.target.checked } }, 'Réglage enregistré.')} />
+              {l}
+            </label>
+          ))}
+          <p className="tiny muted mt">
+            Démonstration : les messages sont préparés et journalisés mais pas envoyés. Pour l’envoi réel, il suffit de brancher un fournisseur SMS et le numéro WhatsApp de l’école.
+          </p>
+        </Card>
+        <Card title="Alertes automatiques">
+          {Object.entries(RULE_LABELS).map(([k, l]) => (
+            <label className="check" key={k} style={{ display: 'flex', marginBottom: 8 }}>
+              <input type="checkbox" checked={rules[k] !== false} onChange={(e) => run(A.updateAlertSettings, { rules: { [k]: e.target.checked } }, 'Réglage enregistré.')} />
+              {l}
+            </label>
+          ))}
+          <p className="tiny muted">Ces alertes apparaissent aussi dans les notifications de l’application des parents et des élèves.</p>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function AnnouncementsPanel({ state, user, run }) {
   const list = state.announcements.slice().sort((a, b) => b.at.localeCompare(a.at));
   return (
     <>
-      <PageHead title="Communication" subtitle="Envoyez des annonces à tous, aux élèves, aux parents, aux enseignants, à une classe ou à un groupe." />
       <div className="grid g-main">
         <Card title="Annonces publiées">
           {list.map((a) => (

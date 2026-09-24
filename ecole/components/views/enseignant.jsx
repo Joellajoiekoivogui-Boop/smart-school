@@ -22,8 +22,9 @@ import {
 } from '@/lib/compute';
 import { canAccessStudent, canTeach, messageContacts } from '@/lib/permissions';
 import * as A from '@/lib/actions';
-import { AttendanceBadge, todayISO } from './shared';
+import { AttendanceBadge, todayISO, PrioritiesCard } from './shared';
 import { TodayCourses } from './eleve';
+import { Lifebook } from './lifebook';
 
 /** Classes et matières de l'enseignant connecté. */
 function teacherScope(state, user) {
@@ -62,6 +63,7 @@ export function EnseignantDashboard({ state, user, go }) {
           <Icon name="checkCircle" size={16} /> Faire l’appel
         </button>
       </Reveal>
+      <PrioritiesCard state={state} user={user} go={go} />
       <div className="grid g-4 mt">
         <Stat label="Mes classes" value={classes.length} icon="users" tone="blue" sub={`${students.length} élèves suivis`} />
         <Stat label="Appels du jour" value={`${callsDone}/${classes.length}`} icon="checkCircle" tone={callsDone === classes.length ? 'green' : 'orange'} sub="Classes dont l’appel est fait" />
@@ -178,8 +180,30 @@ function Row({ children }) {
 
 // ================================================================ Élèves & fiche individuelle
 
-export function StudentFile({ state, user, studentId, go, backLabel = 'Retour à la liste', onBack }) {
+export function StudentFile(props) {
+  const [tab, setTab] = useState('synthese');
+  const { state, user, run, studentId, onBack, backLabel = 'Retour à la liste' } = props;
   if (!canAccessStudent(state, user, studentId)) return <Empty>Accès refusé.</Empty>;
+  const header = (
+    <div className="row between" style={{ marginBottom: 14 }}>
+      <button className="btn btn-sm btn-ghost" onClick={onBack}>
+        <Icon name="chevronLeft" size={16} /> {backLabel}
+      </button>
+      <Tabs value={tab} onChange={setTab} tabs={[{ value: 'synthese', label: 'Synthèse' }, { value: 'fiche', label: 'Fiche de vie scolaire' }]} />
+    </div>
+  );
+  if (tab === 'fiche') {
+    return (
+      <>
+        {header}
+        <Lifebook state={state} user={user} run={run} studentId={studentId} />
+      </>
+    );
+  }
+  return <StudentSummary {...props} header={header} />;
+}
+
+function StudentSummary({ state, user, studentId, go, header }) {
   const s = byId(state.students, studentId);
   const cls = studentClass(state, s);
   const att = attendanceStats(state, studentId);
@@ -192,11 +216,7 @@ export function StudentFile({ state, user, studentId, go, backLabel = 'Retour à
   const studentUser = userForPerson(state, 'eleve', s.id);
   return (
     <>
-      <div className="row" style={{ marginBottom: 14 }}>
-        <button className="btn btn-sm btn-ghost" onClick={onBack}>
-          <Icon name="chevronLeft" size={16} /> {backLabel}
-        </button>
-      </div>
+      {header}
       <Reveal className="card row between" style={{ alignItems: 'center' }}>
         <div className="row">
           <Avatar name={fullName(s)} size="lg" />
@@ -275,13 +295,13 @@ export function StudentFile({ state, user, studentId, go, backLabel = 'Retour à
   );
 }
 
-export function StudentsView({ state, user, params, go }) {
+export function StudentsView({ state, user, run, params, go }) {
   const { classes, subjects } = teacherScope(state, user);
   const query = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const [classId, setClassId] = useState(query?.get('classe') || classes[0]?.id);
   const [search, setSearch] = useState('');
   if (params[0]) {
-    return <StudentFile state={state} user={user} studentId={params[0]} go={go} onBack={() => go('eleves')} />;
+    return <StudentFile state={state} user={user} run={run} studentId={params[0]} go={go} onBack={() => go('eleves')} />;
   }
   const students = state.students
     .filter((s) => s.classId === classId && fullName(s).toLowerCase().includes(search.toLowerCase()))
@@ -467,7 +487,10 @@ function GradeModal({ state, run, homework, onClose }) {
             <div key={s.id} className="list-item" style={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 220px' }}>
                 <div className="strong">{fullName(st)}</div>
-                <div className="tiny muted">Remis le {formatDate(s.submittedAt)}</div>
+                <div className="tiny muted">
+                  Remis le {formatDate(s.submittedAt)}
+                  {s.history?.length > 1 && ` · ${s.history.length} événements (${s.history.map((h) => (h.event === 'correction' ? 'corrigé' : h.event === 'modification' ? 'modifié' : 'déposé')).join(' → ')})`}
+                </div>
                 <p className="small" style={{ marginTop: 6 }}>
                   {s.content}
                 </p>

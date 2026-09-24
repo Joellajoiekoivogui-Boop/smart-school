@@ -16,6 +16,9 @@ export const ROLES = {
 
 export const PERMISSIONS = {
   eleve: [
+    'library:read',
+    'assistant:use',
+    'account:manage',
     'results:read',
     'bulletins:read',
     'homework:read',
@@ -28,6 +31,11 @@ export const PERMISSIONS = {
     'notifications:read',
   ],
   parent: [
+    'library:read',
+    'lifebook:read',
+    'exits:authorize',
+    'payments:online',
+    'account:manage',
     'results:read',
     'bulletins:read',
     'homework:read',
@@ -40,6 +48,11 @@ export const PERMISSIONS = {
     'notifications:read',
   ],
   enseignant: [
+    'library:read',
+    'library:write',
+    'lifebook:read',
+    'observations:write',
+    'account:manage',
     'classes:read',
     'students:read',
     'results:read',
@@ -55,6 +68,15 @@ export const PERMISSIONS = {
     'notifications:read',
   ],
   admin: [
+    'library:read',
+    'library:write',
+    'lifebook:read',
+    'observations:write',
+    'exits:decide',
+    'bulletins:publish',
+    'audit:read',
+    'alerts:manage',
+    'account:manage',
     'classes:read',
     'students:read',
     'students:manage',

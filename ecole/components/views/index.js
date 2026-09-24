@@ -4,10 +4,17 @@ import * as E from './eleve';
 import * as P from './parent';
 import * as T from './enseignant';
 import * as AD from './admin';
+import { AccountView, AuditView } from './account';
+import { LibraryView } from './library';
+import { LifebookView } from './lifebook';
+import { AssistantView } from './assistant';
 
 export const VIEWS = {
   eleve: {
     '': E.EleveDashboard,
+    assistant: AssistantView,
+    bibliotheque: LibraryView,
+    compte: AccountView,
     resultats: S.ResultsView,
     devoirs: S.HomeworkView,
     cours: E.CoursView,
@@ -20,6 +27,8 @@ export const VIEWS = {
   },
   parent: {
     '': P.ParentDashboard,
+    fiche: LifebookView,
+    compte: AccountView,
     enfants: P.ChildrenView,
     resultats: S.ResultsView,
     bulletins: S.BulletinsView,
@@ -34,6 +43,8 @@ export const VIEWS = {
   },
   enseignant: {
     '': T.EnseignantDashboard,
+    bibliotheque: LibraryView,
+    compte: AccountView,
     classes: T.ClassesView,
     eleves: T.StudentsView,
     devoirs: T.TeacherHomeworkView,
@@ -46,6 +57,9 @@ export const VIEWS = {
   },
   admin: {
     '': AD.AdminDashboard,
+    bibliotheque: LibraryView,
+    journal: AuditView,
+    compte: AccountView,
     eleves: AD.AdminStudentsView,
     enseignants: AD.AdminTeachersView,
     classes: AD.AdminClassesView,

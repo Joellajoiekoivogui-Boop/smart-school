@@ -7,6 +7,7 @@
  * devoirs à rendre dans les prochains jours, échéances de paiement…).
  */
 import { EXERCISES } from './exercises.js';
+import { extendSeed } from './seed-extra.js';
 
 export const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
 
@@ -544,7 +545,7 @@ export function buildSeed(now = new Date()) {
     delete s._trend;
   }
 
-  return {
+  const base = {
     version: 1,
     generatedAt: now.toISOString(),
     school: {
@@ -579,4 +580,5 @@ export function buildSeed(now = new Date()) {
     calendar,
     readNotifications: {},
   };
+  return extendSeed(base, now);
 }

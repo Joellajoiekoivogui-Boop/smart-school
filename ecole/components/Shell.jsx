@@ -33,7 +33,9 @@ export default function Shell({ role, segments }) {
     if (!ready) return;
     if (!user) router.replace('/login');
     else if (user.role !== role) router.replace(`/${user.role}`);
-  }, [ready, user, role, router]);
+    // Mot de passe provisoire : changement obligatoire avant d'aller plus loin.
+    else if (user.mustChangePassword && section !== 'compte') router.replace(`/${role}/compte`);
+  }, [ready, user, role, router, section]);
 
   const children = useMemo(() => (user && state ? childrenOf(state, user) : []), [state, user]);
 

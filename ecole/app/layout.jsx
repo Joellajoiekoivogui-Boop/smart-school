@@ -1,11 +1,15 @@
 import './globals.css';
 import { StoreProvider } from '@/lib/store';
 import { MotionProvider } from '@/components/motion';
+import PWA from '@/components/PWA';
 
 export const metadata = {
   title: 'N°1 — L’école connectée',
   description:
     'Plateforme de gestion scolaire qui connecte élèves, parents, enseignants et administration dans un environnement unique.',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, title: 'N°1', statusBarStyle: 'default' },
+  icons: { apple: '/icons/apple-touch-icon.png' },
 };
 
 export const viewport = {
@@ -26,6 +30,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
+        <PWA />
         <MotionProvider>
           <StoreProvider>{children}</StoreProvider>
         </MotionProvider>

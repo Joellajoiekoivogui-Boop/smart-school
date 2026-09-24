@@ -45,4 +45,39 @@ export const EXERCISES = [
   { id: 'x-i2', subjectId: 'info', topic: 'Bureautique', question: 'Dans un tableur, quelle formule calcule la moyenne de A1 à A5 ?', choices: ['=SOMME(A1:A5)', '=MOYENNE(A1:A5)', '=MAX(A1:A5)', '=A1+A5/2'], answer: 1, explanation: 'La fonction MOYENNE calcule la moyenne d’une plage de cellules.' },
   { id: 'x-i3', subjectId: 'info', topic: 'Internet et sécurité', question: 'Quel mot de passe est le plus sûr ?', choices: ['123456', 'motdepasse', 'Kx7!pL9#qT', 'mohamed2012'], answer: 2, explanation: 'Un mot de passe long, mêlant lettres, chiffres et symboles, est bien plus difficile à deviner.' },
   { id: 'x-i4', subjectId: 'info', topic: 'Programmation', question: 'Que vaut x après : x = 3 ; x = x + 2 ?', choices: ['3', '2', '5', '32'], answer: 2, explanation: 'On ajoute 2 à la valeur actuelle de x : 3 + 2 = 5.' },
+
+  // ---------- Compléments v2 : entraînement personnalisé ----------
+  { id: 'x-m9', subjectId: 'maths', topic: 'Fractions', question: 'Combien vaut 3/4 − 1/3 ?', choices: ['2/1', '5/12', '2/7', '1/2'], answer: 1, explanation: 'Dénominateur commun 12 : 9/12 − 4/12 = 5/12.' },
+  { id: 'x-m10', subjectId: 'maths', topic: 'Fractions', question: 'Combien vaut 2/5 ÷ 4/5 ?', choices: ['1/2', '8/25', '2', '6/5'], answer: 0, explanation: 'Diviser, c’est multiplier par l’inverse : 2/5 × 5/4 = 10/20 = 1/2.' },
+  { id: 'x-m11', subjectId: 'maths', topic: 'Fractions', question: 'Quelle fraction est égale à 0,75 ?', choices: ['7/5', '3/4', '75/10', '1/75'], answer: 1, explanation: '0,75 = 75/100 = 3/4 après simplification par 25.' },
+  { id: 'x-m12', subjectId: 'maths', topic: 'Fractions', question: 'Les 2/3 d’une classe de 30 élèves sont des filles. Combien de filles ?', choices: ['10', '15', '20', '23'], answer: 2, explanation: '2/3 × 30 = 60/3 = 20.' },
+  { id: 'x-m13', subjectId: 'maths', topic: 'Puissances', question: 'Combien vaut 10⁻² ?', choices: ['−100', '0,01', '0,1', '−20'], answer: 1, explanation: '10⁻² = 1/10² = 1/100 = 0,01.' },
+  { id: 'x-m14', subjectId: 'maths', topic: 'Puissances', question: 'Simplifier 3² × 3³.', choices: ['3⁵', '3⁶', '9⁵', '6⁵'], answer: 0, explanation: 'On additionne les exposants : 3²⁺³ = 3⁵.' },
+  { id: 'x-m15', subjectId: 'maths', topic: 'Statistiques', question: 'Moyenne de 12, 14 et 16 ?', choices: ['13', '14', '15', '42'], answer: 1, explanation: '(12 + 14 + 16) ÷ 3 = 42 ÷ 3 = 14.' },
+  { id: 'x-m16', subjectId: 'maths', topic: 'Géométrie', question: 'Aire d’un rectangle de 6 cm sur 4 cm ?', choices: ['10 cm²', '20 cm²', '24 cm²', '24 cm'], answer: 2, explanation: 'Aire = longueur × largeur = 6 × 4 = 24 cm².' },
+  { id: 'x-m17', subjectId: 'maths', topic: 'Équations', question: 'Résoudre x/4 = 3.', choices: ['x = 7', 'x = 12', 'x = 3/4', 'x = 1'], answer: 1, explanation: 'On multiplie les deux membres par 4 : x = 12.' },
+
+  { id: 'x-f6', subjectId: 'francais', topic: 'Conjugaison', question: '« Demain, nous ___ au marché. » (aller, futur)', choices: ['allons', 'irons', 'allions', 'irions'], answer: 1, explanation: 'Futur simple de « aller » : nous irons.' },
+  { id: 'x-f7', subjectId: 'francais', topic: 'Orthographe', question: 'Complétez : « Ils ___ partis tôt. »', choices: ['son', 'sont', 'sons', 'sontent'], answer: 1, explanation: '« Sont » est le verbe être (on peut dire « étaient »).' },
+  { id: 'x-f8', subjectId: 'francais', topic: 'Grammaire', question: 'Dans « Aminata lit un livre », « un livre » est :', choices: ['Sujet', 'COD', 'COI', 'Attribut'], answer: 1, explanation: 'Aminata lit quoi ? un livre : complément d’objet direct.' },
+
+  { id: 'x-a6', subjectId: 'anglais', topic: 'Vocabulary', question: 'What is « le marché » in English?', choices: ['The market', 'The march', 'The shop', 'The mall'], answer: 0, explanation: 'Market = marché.' },
+  { id: 'x-a7', subjectId: 'anglais', topic: 'Grammar', question: 'I ___ 13 years old.', choices: ['have', 'am', 'is', 'has'], answer: 1, explanation: 'En anglais, on utilise « to be » pour l’âge : I am 13.' },
+
+  { id: 'x-p6', subjectId: 'physique', topic: 'Électricité', question: 'Dans un circuit en série, si une lampe grille :', choices: ['Les autres brillent plus', 'Les autres s’éteignent', 'Rien ne change', 'Le générateur explose'], answer: 1, explanation: 'Le circuit est ouvert : le courant ne passe plus nulle part.' },
+  { id: 'x-p7', subjectId: 'physique', topic: 'Mécanique', question: 'L’unité du poids est :', choices: ['le kilogramme', 'le newton', 'le joule', 'le mètre'], answer: 1, explanation: 'Le poids est une force, mesurée en newtons (N).' },
+
+  { id: 'x-s1', subjectId: 'svt', topic: 'La cellule', question: 'Quel élément contient l’information génétique ?', choices: ['La membrane', 'Le noyau', 'Le cytoplasme', 'La vacuole'], answer: 1, explanation: 'Le noyau contient l’ADN.' },
+  { id: 'x-s2', subjectId: 'svt', topic: 'Nutrition', question: 'Où se termine principalement la digestion ?', choices: ['Estomac', 'Intestin grêle', 'Bouche', 'Foie'], answer: 1, explanation: 'L’intestin grêle termine la digestion et absorbe les nutriments.' },
+  { id: 'x-s3', subjectId: 'svt', topic: 'Écosystèmes', question: 'Dans une chaîne alimentaire, les plantes sont :', choices: ['Des consommateurs', 'Des producteurs', 'Des décomposeurs', 'Des prédateurs'], answer: 1, explanation: 'Grâce à la photosynthèse, les plantes produisent leur matière.' },
+  { id: 'x-s4', subjectId: 'svt', topic: 'Reproduction', question: 'La fécondation est la rencontre :', choices: ['De deux ovules', 'D’un ovule et d’un spermatozoïde', 'De deux cellules du sang', 'De deux noyaux de la peau'], answer: 1, explanation: 'Elle donne une cellule-œuf.' },
+
+  { id: 'x-h1', subjectId: 'histgeo', topic: 'Indépendances', question: 'En quelle année la Guinée est-elle devenue indépendante ?', choices: ['1945', '1958', '1960', '1984'], answer: 1, explanation: 'Le 2 octobre 1958, après le « non » au référendum du 28 septembre.' },
+  { id: 'x-h2', subjectId: 'histgeo', topic: 'Afrique précoloniale', question: 'Qui a fondé l’empire du Mali ?', choices: ['Samory Touré', 'Soundiata Keïta', 'Mansa Moussa', 'Alfa Yaya'], answer: 1, explanation: 'Soundiata Keïta, vainqueur à Kirina vers 1235.' },
+  { id: 'x-h3', subjectId: 'histgeo', topic: 'Géographie de la Guinée', question: 'Combien de régions naturelles compte la Guinée ?', choices: ['2', '3', '4', '6'], answer: 2, explanation: 'Basse-Guinée, Moyenne-Guinée, Haute-Guinée et Guinée forestière.' },
+  { id: 'x-h4', subjectId: 'histgeo', topic: 'Géographie de la Guinée', question: 'Quel grand fleuve prend sa source en Guinée ?', choices: ['Le Nil', 'Le Niger', 'Le Congo', 'Le Zambèze'], answer: 1, explanation: 'Le Niger naît dans le massif du Fouta-Djalon / dorsale guinéenne.' },
+  { id: 'x-h5', subjectId: 'histgeo', topic: 'Colonisation', question: 'Quel résistant a combattu la colonisation française en Haute-Guinée ?', choices: ['Samory Touré', 'Ahmed Sékou Touré', 'Lansana Conté', 'Alpha Condé'], answer: 0, explanation: 'Samory Touré a résisté jusqu’à sa capture en 1898.' },
+
+  { id: 'x-c5', subjectId: 'chimie', topic: 'Réactions chimiques', question: 'Lors d’une réaction chimique, la masse totale :', choices: ['Augmente', 'Diminue', 'Se conserve', 'Double'], answer: 2, explanation: 'Loi de Lavoisier : rien ne se perd, rien ne se crée.' },
+  { id: 'x-i5', subjectId: 'info', topic: 'Internet et sécurité', question: 'Que faire face à un message qui demande votre mot de passe ?', choices: ['Répondre vite', 'Ne jamais le donner', 'Le partager à un ami', 'Le publier'], answer: 1, explanation: 'Aucun service sérieux ne demande votre mot de passe par message.' },
 ];

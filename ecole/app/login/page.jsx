@@ -31,9 +31,9 @@ export default function LoginPage() {
 
   const submit = (e, creds) => {
     e?.preventDefault();
-    const u = login(creds?.email ?? email, creds?.password ?? password);
-    if (!u) setError('Adresse e-mail ou mot de passe incorrect.');
-    else router.replace(`/${u.role}`);
+    const res = login(creds?.email ?? email, creds?.password ?? password);
+    if (res.error) setError(res.error);
+    else router.replace(res.user.mustChangePassword ? `/${res.user.role}/compte` : `/${res.user.role}`);
   };
 
   return (

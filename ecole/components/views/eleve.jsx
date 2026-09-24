@@ -20,7 +20,8 @@ import {
 } from '@/lib/compute';
 import { TIME_SLOTS } from '@/lib/seed';
 import * as A from '@/lib/actions';
-import { homeworkStatus, todayISO } from './shared';
+import { homeworkStatus, todayISO, PrioritiesCard } from './shared';
+import { adaptiveQuestions, gamification, recommendations } from '@/lib/gamification';
 
 export function TodayCourses({ state, classId, teacherId }) {
   const day = new Date().getDay() - 1;
@@ -76,6 +77,7 @@ export function EleveDashboard({ state, user, go }) {
           <Icon name="brain" size={16} /> S’entraîner
         </button>
       </Reveal>
+      <PrioritiesCard state={state} user={user} go={go} />
       <div className="grid g-4 mt">
         <Stat label="Moyenne générale" value={formatNote(avg)} unit="/ 20" icon="chart" tone="blue" sub={rank ? `${rank.rank}${rank.rank === 1 ? 'er' : 'e'} sur ${rank.size}` : ''} />
         <Stat label="Présence" value={att.rate == null ? '—' : `${Math.round(att.rate)} %`} icon="checkCircle" tone="green" sub={`${att.absent} absence(s) · ${att.late} retard(s)`} />
@@ -242,11 +244,14 @@ export function TrainingView({ state, user, run }) {
     return out;
   }, [attempts]);
 
-  const start = (subjectId, topic = null) => {
+  const start = (subjectId, topic = null, adaptive = false) => {
     const pool = state.exercises.filter((x) => x.subjectId === subjectId && (!topic || x.topic === topic));
-    const questions = shuffle(pool, Date.now() % 1000).slice(0, 5);
-    setSession({ subjectId, topic, questions, index: 0, selected: null, checked: false, correct: 0 });
+    const questions = adaptive ? adaptiveQuestions(state, studentId, subjectId, 5) : shuffle(pool, Date.now() % 1000).slice(0, 5);
+    setSession({ subjectId, topic, questions, index: 0, selected: null, checked: false, correct: 0, adaptive });
   };
+  const game = gamification(state, studentId);
+  const recos = recommendations(state, studentId, 4);
+  const [goalDraft, setGoalDraft] = useState(null);
 
   if (session) {
     const q = session.questions[session.index];
@@ -270,6 +275,9 @@ export function TrainingView({ state, user, run }) {
               <h2 style={{ marginTop: 8 }}>
                 {session.correct} / {session.questions.length} bonnes réponses
               </h2>
+              <p className="strong" style={{ color: 'var(--blue)' }}>
+                +{session.correct * 10 + 5 + (session.correct === session.questions.length ? 20 : 0)} XP
+              </p>
               <p className="muted mt">
                 {pct >= 80 ? 'Excellent travail !' : pct >= 50 ? 'C’est bien, continue à t’entraîner.' : 'Revois la correction et réessaie : c’est comme ça qu’on progresse.'}
               </p>
@@ -377,6 +385,95 @@ export function TrainingView({ state, user, run }) {
   return (
     <>
       <PageHead title="Espace d’entraînement" subtitle="Faites des exercices, recevez la correction et suivez votre évolution." />
+      <div className="grid g-main" style={{ marginBottom: 18 }}>
+        <Card className="game-card">
+          <div className="row" style={{ gap: 20, alignItems: 'center' }}>
+            <div className="level-badge" aria-label={`Niveau ${game.level.number}`}>
+              <span className="tiny">Niveau</span>
+              <strong>{game.level.number}</strong>
+            </div>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div className="row between">
+                <h2>{game.level.name}</h2>
+                <span className="num strong">{game.xp} XP</span>
+              </div>
+              <Bar value={game.levelProgress * 100} />
+              <p className="tiny muted" style={{ marginTop: 6 }}>
+                {game.nextLevel ? `${game.nextLevel.min - game.xp} XP pour devenir « ${game.nextLevel.name} »` : 'Niveau maximum atteint !'}
+              </p>
+            </div>
+          </div>
+          <div className="grid g-3 mt" style={{ gap: 12 }}>
+            <div className="game-stat">
+              <Icon name="flame" size={20} />
+              <div>
+                <strong className="num">{game.currentStreak} jour(s)</strong>
+                <span className="tiny muted">{game.trainedToday ? 'Série en cours 🔥' : 'Entraîne-toi aujourd’hui pour continuer'}</span>
+              </div>
+            </div>
+            <div className="game-stat">
+              <Icon name="target" size={20} />
+              <div>
+                <strong className="num">
+                  {game.weekDone}/{game.weeklyGoal} séances
+                </strong>
+                <span className="tiny muted">
+                  Objectif de la semaine{' '}
+                  {goalDraft == null ? (
+                    <button className="btn btn-ghost btn-sm" onClick={() => setGoalDraft(String(game.weeklyGoal))}>
+                      modifier
+                    </button>
+                  ) : (
+                    <span className="row" style={{ gap: 4, display: 'inline-flex' }}>
+                      <input className="input input-sm" style={{ width: 56 }} inputMode="numeric" value={goalDraft} onChange={(e) => setGoalDraft(e.target.value.replace(/\D/g, ''))} aria-label="Séances par semaine" />
+                      <button className="btn btn-sm" onClick={() => run(A.setTrainingGoal, { weekly: goalDraft }, 'Objectif mis à jour.').ok && setGoalDraft(null)}>
+                        OK
+                      </button>
+                    </span>
+                  )}
+                </span>
+              </div>
+            </div>
+            <div className="game-stat">
+              <Icon name="trophy" size={20} />
+              <div>
+                <strong className="num">
+                  {game.badges.filter((b) => b.earned).length}/{game.badges.length} badges
+                </strong>
+                <span className="tiny muted">{game.perfect} séance(s) sans faute</span>
+              </div>
+            </div>
+          </div>
+          <div className="badges mt">
+            {game.badges.map((b) => (
+              <div key={b.id} className={`badge-tile ${b.earned ? 'earned' : ''}`} title={`${b.name} — ${b.desc}`}>
+                <span className="badge-icon">{b.icon}</span>
+                <span className="tiny strong">{b.name}</span>
+              </div>
+            ))}
+          </div>
+          <p className="tiny muted mt">Tes points et badges sont personnels : ils mesurent tes efforts, pas un classement entre élèves.</p>
+        </Card>
+        <Card title="Recommandé pour toi">
+          {recos.map((r) => (
+            <div className="list-item" key={`${r.subjectId}-${r.topic}`}>
+              <span className="notif-icon tone-orange">
+                <Icon name="target" size={16} />
+              </span>
+              <div className="grow">
+                <div className="strong small">{r.topic}</div>
+                <div className="tiny muted">
+                  {byId(state.subjects, r.subjectId)?.name} · {r.reason}
+                </div>
+              </div>
+              <button className="btn btn-sm btn-primary" onClick={() => start(r.subjectId, r.topic)}>
+                Go
+              </button>
+            </div>
+          ))}
+          {!recos.length && <Empty>Bravo, aucune notion en difficulté !</Empty>}
+        </Card>
+      </div>
       <div className="grid g-3">
         {subjects.map((s) => {
           const st = stats[s.id];
@@ -397,8 +494,8 @@ export function TrainingView({ state, user, run }) {
                   </button>
                 ))}
               </div>
-              <button className="btn btn-primary btn-block mt" onClick={() => start(s.id)}>
-                <Icon name="target" size={16} /> S’entraîner
+              <button className="btn btn-primary btn-block mt" onClick={() => start(s.id, null, true)} title="Plus de questions sur tes notions à consolider">
+                <Icon name="brain" size={16} /> Séance personnalisée
               </button>
             </Reveal>
           );

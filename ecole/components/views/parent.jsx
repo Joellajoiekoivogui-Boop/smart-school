@@ -21,7 +21,7 @@ import {
   timeAgo,
   todayAttendance,
 } from '@/lib/compute';
-import { AttendanceBadge, todayISO } from './shared';
+import { AttendanceBadge, todayISO, PrioritiesCard } from './shared';
 
 function childSummary(state, childId) {
   const att = todayAttendance(state, childId, todayISO());
@@ -62,6 +62,7 @@ export function ParentDashboard({ state, user, studentId, go }) {
           </div>
         </div>
       </Reveal>
+      <PrioritiesCard state={state} user={user} go={go} />
 
       <div className="grid g-4 mt">
         <Stat label="Moyenne" value={formatNote(s.average)} unit="/ 20" icon="chart" tone="blue" sub={s.rank ? `${s.rank.rank}${s.rank.rank === 1 ? 'er' : 'e'} sur ${s.rank.size} élèves` : ''} />
