@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '../Icon';
-import { Avatar, Badge, Bar, Card, Empty, Field, Grade, HBars, LineChart, Modal, PageHead, Ring, Select, Stat, Tabs } from '../ui';
+import { Avatar, Badge, Bar, Card, Empty, Field, Grade, HBars, LineChart, Modal, PageHead, Ring, Select, Stagger, StaggerItem, Stat, Tabs } from '../ui';
 import {
   attendanceStats,
   byId,
@@ -429,18 +429,25 @@ export function PrioritiesCard({ state, user, go }) {
   }
   return (
     <Card title="À traiter en priorité" className="mt priorities">
-      <div className="priority-grid">
+      <Stagger className="priority-grid">
         {list.map((p) => {
           const [label, tone] = SEVERITY[p.severity] || ['Info', 'blue'];
           return (
-            <button key={p.id} className={`priority priority-${tone}`} onClick={() => p.link && go(p.link)}>
+            <StaggerItem
+              as="button"
+              key={p.id}
+              className={`priority priority-${tone}`}
+              onClick={() => p.link && go(p.link)}
+              whileHover={{ y: -3, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <Badge tone={tone}>{label}</Badge>
               <span className="strong small">{p.title}</span>
               {p.body && <span className="tiny muted ellipsis">{p.body}</span>}
-            </button>
+            </StaggerItem>
           );
         })}
-      </div>
+      </Stagger>
     </Card>
   );
 }

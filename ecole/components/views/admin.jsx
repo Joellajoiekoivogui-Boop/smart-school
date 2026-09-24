@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react';
 import Icon from '../Icon';
 import { Reveal } from '../motion';
-import { Avatar, Badge, Bar, Card, Empty, Field, Grade, HBars, Modal, PageHead, Select, Stat, Tabs } from '../ui';
+import { Avatar, Badge, Bar, Card, Empty, Field, Grade, HBars, Modal, PageHead, Select, Stat, Tabs, Hero, Wave } from '../ui';
 import {
   attendanceStats,
   byId,
@@ -63,7 +63,7 @@ export function AdminDashboard({ state, user, go }) {
 
   return (
     <>
-      <Reveal className="hero">
+      <Hero>
         <div>
           <h1>Tableau de bord de l’établissement</h1>
           <p>
@@ -78,7 +78,7 @@ export function AdminDashboard({ state, user, go }) {
             <Icon name="wallet" size={16} /> Encaisser
           </button>
         </div>
-      </Reveal>
+      </Hero>
       <PrioritiesCard state={state} user={user} go={go} />
       <div className="grid g-4 mt">
         <Stat label="Élèves inscrits" value={state.students.length} icon="user" tone="blue" sub={`${state.classes.length} classes · ${state.teachers.length} enseignants`} />

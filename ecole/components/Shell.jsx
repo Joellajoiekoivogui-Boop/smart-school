@@ -79,6 +79,11 @@ export default function Shell({ role, segments }) {
 
   return (
     <div className={`app ${menuOpen ? 'menu-open' : ''}`}>
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <span className="absolute -top-40 right-[-10%] h-[28rem] w-[28rem] rounded-full bg-blue-400/15 blur-3xl animate-float-slow" />
+        <span className="absolute bottom-[-12rem] left-[20%] h-[26rem] w-[26rem] rounded-full bg-indigo-400/10 blur-3xl animate-float" />
+        <span className="absolute top-1/3 right-1/4 h-64 w-64 rounded-full bg-emerald-300/10 blur-3xl animate-float-slow" />
+      </div>
       <aside className="sidebar" aria-label="Navigation principale">
         <div className="brand">
           <span className="brand-mark">N°1</span>
@@ -90,8 +95,14 @@ export default function Shell({ role, segments }) {
           </div>
         </div>
         <nav className="nav">
-          {nav.map((n) => (
-            <Link key={n.key} href={`/${role}${n.key ? `/${n.key}` : ''}`} className={n.key === section ? 'active' : ''}>
+          {nav.map((n, i) => (
+            <motion.div
+              key={n.key}
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 26, delay: 0.05 + i * 0.03 }}
+            >
+            <Link href={`/${role}${n.key ? `/${n.key}` : ''}`} className={`nav-link ${n.key === section ? 'active' : ''}`}>
               {n.key === section && (
                 <motion.span
                   className="nav-indicator"
@@ -99,7 +110,9 @@ export default function Shell({ role, segments }) {
                   transition={{ type: 'spring', stiffness: 420, damping: 36 }}
                 />
               )}
-              <Icon name={n.icon} size={18} />
+              <motion.span className="nav-icon" whileHover={{ rotate: [0, -14, 10, 0], scale: 1.15 }} transition={{ duration: 0.45 }}>
+                <Icon name={n.icon} size={18} />
+              </motion.span>
               <span className="nav-label-text">{n.label}</span>
               {counts[n.key] > 0 && (
                 <motion.span className="count" key={counts[n.key]} initial={{ scale: 0.6 }} animate={{ scale: 1 }}>
@@ -107,6 +120,7 @@ export default function Shell({ role, segments }) {
                 </motion.span>
               )}
             </Link>
+            </motion.div>
           ))}
         </nav>
         <div className="sidebar-foot">
@@ -151,7 +165,13 @@ export default function Shell({ role, segments }) {
           )}
           {NAVIGATION[role].some((n) => n.key === 'notifications') && (
             <Link href={`/${role}/notifications`} className="btn btn-ghost btn-icon" aria-label="Notifications" style={{ position: 'relative' }}>
-              <Icon name="bell" />
+              <motion.span
+                style={{ display: 'inline-flex', transformOrigin: '50% 10%' }}
+                animate={unreadNotifs > 0 ? { rotate: [0, -16, 14, -10, 8, -4, 0] } : { rotate: 0 }}
+                transition={unreadNotifs > 0 ? { duration: 0.9, repeat: Infinity, repeatDelay: 5, delay: 1 } : undefined}
+              >
+                <Icon name="bell" />
+              </motion.span>
               {unreadNotifs > 0 && (
                 <span className="dot" style={{ position: 'absolute', top: 10, right: 10, background: 'var(--red)' }} />
               )}

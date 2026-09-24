@@ -19,5 +19,10 @@
   "engines": {
     "node": ">=18"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3"
+  }
 }

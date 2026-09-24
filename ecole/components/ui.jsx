@@ -2,7 +2,7 @@
 import { useId, useState } from 'react';
 import { motion } from 'motion/react';
 import Icon from './Icon';
-import { EASE, itemVariants } from './motion';
+import { AnimatedValue, EASE, SPRING, itemVariants, listItemVariants, listVariants } from './motion';
 import { formatDate, formatNote } from '@/lib/compute';
 
 export function PageHead({ title, subtitle, children }) {
@@ -19,7 +19,13 @@ export function PageHead({ title, subtitle, children }) {
 
 export function Card({ title, action, children, className = '', flush = false }) {
   return (
-    <motion.section className={`card ${flush ? 'flush' : ''} ${className}`} variants={itemVariants}>
+    <motion.section
+      className={`card ${flush ? 'flush' : ''} ${className}`}
+      variants={itemVariants}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.08 }}
+    >
       {(title || action) && (
         <div className="card-head">
           {title && <h2>{title}</h2>}
@@ -33,17 +39,17 @@ export function Card({ title, action, children, className = '', flush = false })
 
 export function Stat({ label, value, unit, sub, icon, tone = 'blue', children }) {
   return (
-    <motion.div className="card stat" variants={itemVariants} whileHover={{ y: -2 }}>
+    <motion.div className={`card stat stat-${tone}`} variants={itemVariants} whileHover="hover">
       <div className="stat-top">
         <span className="stat-label">{label}</span>
         {icon && (
-          <span className={`stat-icon tone-${tone}`}>
+          <motion.span className={`stat-icon tone-${tone}`} variants={{ hover: { rotate: -12, scale: 1.15, transition: SPRING } }}>
             <Icon name={icon} size={18} />
-          </span>
+          </motion.span>
         )}
       </div>
       <div className={`stat-value num ${String(value).length > 9 ? 'long' : ''}`}>
-        {value}
+        <AnimatedValue value={value} />
         {unit && <small> {unit}</small>}
       </div>
       {sub && <div className="stat-sub">{sub}</div>}
@@ -80,7 +86,7 @@ export function Bar({ value, max = 100, tone }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
     <div className={`bar ${tone || ''}`} role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
-      <motion.span initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: EASE, delay: 0.15 }} />
+      <motion.span initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ type: 'spring', stiffness: 90, damping: 18, delay: 0.2 }} />
     </div>
   );
 }
@@ -125,9 +131,10 @@ export function Modal({ title, onClose, children, footer, wide }) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        initial={{ opacity: 0, y: 16, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.28, ease: EASE }}
+        initial={{ opacity: 0, y: 40, scale: 0.9, rotateX: 8 }}
+        animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+        style={{ transformPerspective: 900 }}
       >
         <div className="modal-head no-print">
           <h2>{title}</h2>
@@ -336,7 +343,7 @@ export function HBars({ rows, max = 20, format = formatNote, markLabel = 'Moyenn
                 className="hbar-fill"
                 initial={{ width: 0 }}
                 animate={{ width: `${((r.value ?? 0) / max) * 100}%` }}
-                transition={{ duration: 0.7, ease: EASE, delay: 0.1 + i * 0.04 }}
+                transition={{ type: 'spring', stiffness: 80, damping: 16, delay: 0.1 + i * 0.06 }}
               />
               {r.mark != null && <div className="hbar-mark" style={{ left: `${(r.mark / max) * 100}%` }} />}
             </div>
@@ -369,5 +376,60 @@ export function Select({ value, onChange, options, className = 'select', ...rest
         </option>
       ))}
     </select>
+  );
+}
+
+/**
+ * Bandeau d'accueil animé : dégradé qui ondule, halos lumineux qui flottent
+ * et motif discret en arrière-plan.
+ */
+export function Hero({ children, className = '' }) {
+  return (
+    <motion.div
+      className={`hero relative isolate overflow-hidden bg-[linear-gradient(120deg,#0f172a_0%,#1e3a8a_45%,#2563eb_75%,#4f46e5_100%)] bg-[length:220%_220%] animate-gradient ${className}`}
+      variants={itemVariants}
+    >
+      <span aria-hidden className="pointer-events-none absolute -top-24 -right-16 -z-10 h-72 w-72 rounded-full bg-sky-400/30 blur-3xl animate-float" />
+      <span aria-hidden className="pointer-events-none absolute -bottom-28 left-1/4 -z-10 h-72 w-72 rounded-full bg-indigo-500/35 blur-3xl animate-float-slow" />
+      <span aria-hidden className="pointer-events-none absolute top-6 left-6 -z-10 h-24 w-24 rounded-full bg-emerald-400/20 blur-2xl animate-float" />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12] [background-image:radial-gradient(rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:18px_18px] [mask-image:linear-gradient(to_left,black,transparent_70%)]"
+      />
+      {children}
+    </motion.div>
+  );
+}
+
+/** Main qui salue 👋 (petite animation de bienvenue). */
+export function Wave() {
+  return (
+    <motion.span
+      className="inline-block origin-[70%_70%]"
+      animate={{ rotate: [0, 18, -8, 18, -4, 10, 0] }}
+      transition={{ duration: 1.8, delay: 0.6, repeat: Infinity, repeatDelay: 4 }}
+      aria-hidden
+    >
+      👋
+    </motion.span>
+  );
+}
+
+/** Conteneur dont les enfants <StaggerItem> apparaissent en cascade. */
+export function Stagger({ as = 'div', className, children }) {
+  const Tag = motion[as];
+  return (
+    <Tag className={className} variants={listVariants} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.1 }}>
+      {children}
+    </Tag>
+  );
+}
+
+export function StaggerItem({ as = 'div', className, children, ...rest }) {
+  const Tag = motion[as];
+  return (
+    <Tag className={className} variants={listItemVariants} {...rest}>
+      {children}
+    </Tag>
   );
 }

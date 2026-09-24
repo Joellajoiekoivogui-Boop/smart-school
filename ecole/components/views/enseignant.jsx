@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react';
 import Icon from '../Icon';
 import { Reveal } from '../motion';
-import { Avatar, Badge, Card, Empty, Field, Grade, HBars, LineChart, Modal, PageHead, Select, Stat, Tabs } from '../ui';
+import { Avatar, Badge, Card, Empty, Field, Grade, HBars, LineChart, Modal, PageHead, Select, Stat, Tabs, Hero, Wave } from '../ui';
 import {
   attendanceStats,
   byId,
@@ -52,9 +52,9 @@ export function EnseignantDashboard({ state, user, go }) {
 
   return (
     <>
-      <Reveal className="hero">
+      <Hero>
         <div>
-          <h1>Bonjour {user.name} 👋</h1>
+          <h1>Bonjour {user.name} <Wave /></h1>
           <p>
             {subjects.map((s) => s.name).join(' · ')} — {classes.length} classe(s), {students.length} élèves
           </p>
@@ -62,7 +62,7 @@ export function EnseignantDashboard({ state, user, go }) {
         <button className="btn btn-primary" onClick={() => go('presences')}>
           <Icon name="checkCircle" size={16} /> Faire l’appel
         </button>
-      </Reveal>
+      </Hero>
       <PrioritiesCard state={state} user={user} go={go} />
       <div className="grid g-4 mt">
         <Stat label="Mes classes" value={classes.length} icon="users" tone="blue" sub={`${students.length} élèves suivis`} />

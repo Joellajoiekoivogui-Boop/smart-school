@@ -1,7 +1,7 @@
 'use client';
 import Icon from '../Icon';
 import { Reveal } from '../motion';
-import { Avatar, Badge, Bar, Card, Empty, LineChart, PageHead, Stat } from '../ui';
+import { Avatar, Badge, Bar, Card, Empty, LineChart, PageHead, Stat, Hero, Wave } from '../ui';
 import {
   attendanceStats,
   byId,
@@ -45,10 +45,10 @@ export function ParentDashboard({ state, user, studentId, go }) {
   const notifs = notificationsFor(state, user).slice(0, 6);
   return (
     <>
-      <Reveal className="hero">
+      <Hero>
         <div>
           <h1>
-            Bonjour, {parent.title} {parent.lastName} 👋
+            Bonjour, {parent.title} {parent.lastName} <Wave />
           </h1>
           <p>Voici la situation scolaire de {childrenOf(state, user).length > 1 ? 'vos enfants' : 'votre enfant'}.</p>
         </div>
@@ -61,7 +61,7 @@ export function ParentDashboard({ state, user, studentId, go }) {
             </div>
           </div>
         </div>
-      </Reveal>
+      </Hero>
       <PrioritiesCard state={state} user={user} go={go} />
 
       <div className="grid g-4 mt">

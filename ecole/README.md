@@ -152,18 +152,35 @@ arrondies à 14 px, boutons à 10 px, petits éléments à 8 px, ombre
 `0 4px 20px rgba(15, 23, 42, 0.06)`. Interface responsive (mobile + ordinateur).
 Tous les jetons sont dans `app/globals.css`.
 
+### Tailwind CSS
+
+Tailwind CSS v4 (`@tailwindcss/postcss`) est branché sur la charte : les
+couleurs, polices et animations sont déclarées dans `@theme`
+(`app/globals.css`) et utilisables en classes (`bg-brand`, `text-navy`,
+`font-display`, `shadow-glow`, `animate-float`, `animate-gradient`,
+`animate-shine`…). Les styles de l’application sont dans la couche
+`components`, ce qui permet de les compléter avec des utilitaires Tailwind.
+La page de connexion et les bandeaux d’accueil sont écrits en Tailwind.
+
 ### Animations (Motion, ex-Framer Motion)
 
-Les animations sont courtes et utiles, sans effet décoratif gratuit
-(`components/motion.jsx`) :
+L’interface est vivante mais reste lisible (`components/motion.jsx`) :
 
-- apparition en cascade des cartes et statistiques à chaque page ;
-- indicateur glissant du menu latéral et des onglets ;
-- barres, anneaux et courbes qui se tracent à l’affichage ;
-- ouverture des fenêtres (modales) et notifications (toasts) animées ;
-- entraînement : transition entre questions, secousse sur une mauvaise
-  réponse, rebond sur une bonne, trophée au score final ;
-- retour tactile sur les boutons et survol des cartes.
+- **transitions de page** : entrée avec léger flou et sortie rapide
+  (`AnimatePresence`), puis cascade à ressort des cartes et statistiques ;
+- **compteurs animés** : moyennes, pourcentages et montants défilent jusqu’à
+  leur valeur ;
+- **révélation au défilement** des cartes, apparition progressive des listes,
+  tableaux, notifications et chronologies ;
+- **bandeaux d’accueil** avec dégradé qui ondule, halos flottants et main qui
+  salue ; fond décoratif animé ;
+- **menu** : entrée en cascade, icônes qui s’agitent au survol, indicateur
+  glissant ; cloche qui sonne quand des notifications attendent ;
+- **micro-interactions** : cartes qui se soulèvent, icônes qui pivotent,
+  boutons avec reflet, badges d’entraînement qui flottent, niveau qui
+  « pop » ; fenêtres qui s’ouvrent avec un ressort et fond flouté ;
+- **connexion** : titre mot par mot, orbes lumineux en mouvement, carte qui
+  tremble en cas d’erreur.
 
 Si l’utilisateur a activé « réduire les animations » dans son système, les
 déplacements sont supprimés (`MotionConfig reducedMotion="user"` + règle CSS
