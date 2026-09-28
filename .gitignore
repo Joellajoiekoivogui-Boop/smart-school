@@ -7,3 +7,4 @@ whatsapp-session/
 .DS_Store
 dist/
 coverage/
+data/

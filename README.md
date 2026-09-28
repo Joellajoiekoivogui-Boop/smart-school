@@ -157,6 +157,25 @@ src/
 scripts/seed.js              données de démonstration en GNF
 ```
 
+## Démarrage en un double-clic (recommandé)
+
+1. Installez [Node.js LTS](https://nodejs.org) (une seule fois).
+2. Téléchargez ce projet : bouton **Code → Download ZIP** sur GitHub (branche
+   `claude/ai-sales-agent-whatsapp-kvw64h`), puis dézippez-le.
+3. Double-cliquez sur **`demarrer.bat`** (Windows) — ou lancez `./demarrer.sh`
+   (Mac/Linux).
+
+Au premier lancement, le script installe tout, puis pose 4 questions (clé
+API OpenAI, numéro WhatsApp, nom de la boutique, email admin) et écrit
+`.env` pour vous. Si aucune base MongoDB n'est installée, il en démarre une
+locale automatiquement (téléchargée une fois, données gardées dans
+`data/`). Il crée ensuite le catalogue de démo et le compte admin, et affiche
+le QR code : sur le téléphone de la boutique, **WhatsApp → Appareils liés →
+Lier un appareil**.
+
+Laissez la fenêtre ouverte : la fermer arrête l'agent. Les lancements
+suivants ne reposent aucune question.
+
 ## Lancer en local (sur votre ordinateur)
 
 C'est le chemin le plus rapide pour tester l'agent sans créer de compte

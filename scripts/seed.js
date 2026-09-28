@@ -15,10 +15,10 @@ async function seed() {
   let boutique = await Boutique.findOne({ whatsappNumber: numeroDemo });
   if (!boutique) {
     boutique = await Boutique.create({
-      nom: 'Boutique Demo Conakry',
+      nom: process.env.BUSINESS_NAME || 'Boutique Demo Conakry',
       secteur: 'boutique_generale',
       whatsappNumber: numeroDemo,
-      responsable: { nom: 'Joel', telephone: numeroDemo },
+      responsable: { telephone: numeroDemo },
     });
   }
 
@@ -32,7 +32,7 @@ async function seed() {
       peutPromettreDelaiLivraison: false,
       delaiRelanceMinutes: 60,
       maxRelancesParConversation: 2,
-      messageBienvenue: 'Bonjour et bienvenue chez Boutique Demo Conakry ! Comment puis-je vous aider ?',
+      messageBienvenue: `Bonjour et bienvenue chez ${boutique.nom} ! Comment puis-je vous aider ?`,
     },
     { upsert: true, setDefaultsOnInsert: true }
   );
