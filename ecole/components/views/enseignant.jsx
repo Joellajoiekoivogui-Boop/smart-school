@@ -1,8 +1,9 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Icon from '../Icon';
-import { Reveal } from '../motion';
-import { Avatar, Badge, Card, Empty, Field, Grade, HBars, LineChart, Modal, PageHead, Select, Stat, Tabs } from '../ui';
+import { photoOf, userPhoto } from '@/lib/avatars';
+import { Reveal, motion } from '../motion';
+import { Avatar, Badge, Card, Empty, Field, Grade, HBars, LineChart, Modal, PageHead, Select, Stat, Tabs, Hero, Wave } from '../ui';
 import {
   attendanceStats,
   byId,
@@ -52,17 +53,22 @@ export function EnseignantDashboard({ state, user, go }) {
 
   return (
     <>
-      <Reveal className="hero">
-        <div>
-          <h1>Bonjour {user.name} 👋</h1>
+      <Hero>
+        <div className="row" style={{ gap: 16, flexWrap: 'nowrap' }}>
+          <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 14, delay: 0.15 }} whileHover={{ scale: 1.08 }}>
+            <Avatar src={photoOf(teacher, 'teacher')} name={user.name} size="lg" dark />
+          </motion.div>
+          <div>
+          <h1>Bonjour {user.name} <Wave /></h1>
           <p>
             {subjects.map((s) => s.name).join(' · ')} — {classes.length} classe(s), {students.length} élèves
           </p>
+          </div>
         </div>
         <button className="btn btn-primary" onClick={() => go('presences')}>
           <Icon name="checkCircle" size={16} /> Faire l’appel
         </button>
-      </Reveal>
+      </Hero>
       <PrioritiesCard state={state} user={user} go={go} />
       <div className="grid g-4 mt">
         <Stat label="Mes classes" value={classes.length} icon="users" tone="blue" sub={`${students.length} élèves suivis`} />
@@ -81,7 +87,7 @@ export function EnseignantDashboard({ state, user, go }) {
             {weak.length ? (
               weak.map(({ s, avg }) => (
                 <div className="list-item clickable" key={s.id} style={{ cursor: 'pointer' }} onClick={() => go(`eleves/${s.id}`)}>
-                  <Avatar name={fullName(s)} />
+                  <Avatar src={photoOf(s)} name={fullName(s)} />
                   <div className="grow">
                     <div className="strong small">{fullName(s)}</div>
                     <div className="tiny muted">
@@ -104,7 +110,7 @@ export function EnseignantDashboard({ state, user, go }) {
             {unread.length ? (
               unread.slice(0, 4).map((m) => (
                 <div className="list-item" key={m.id} style={{ cursor: 'pointer' }} onClick={() => go(`messages/${m.from}`)}>
-                  <Avatar name={byId(state.users, m.from)?.name} />
+                  <Avatar src={userPhoto(state, byId(state.users, m.from))} name={byId(state.users, m.from)?.name} />
                   <div className="grow">
                     <div className="strong small">{byId(state.users, m.from)?.name}</div>
                     <div className="tiny muted ellipsis">{m.body}</div>
@@ -219,7 +225,7 @@ function StudentSummary({ state, user, studentId, go, header }) {
       {header}
       <Reveal className="card row between" style={{ alignItems: 'center' }}>
         <div className="row">
-          <Avatar name={fullName(s)} size="lg" />
+          <Avatar src={photoOf(s)} name={fullName(s)} size="lg" />
           <div>
             <h1 style={{ fontSize: 22 }}>{fullName(s)}</h1>
             <div className="small muted">
@@ -337,7 +343,7 @@ export function StudentsView({ state, user, run, params, go }) {
                   <tr key={s.id} className="clickable" onClick={() => go(`eleves/${s.id}`)}>
                     <td>
                       <div className="row" style={{ flexWrap: 'nowrap' }}>
-                        <Avatar name={fullName(s)} />
+                        <Avatar src={photoOf(s)} name={fullName(s)} />
                         <span className="strong">{fullName(s)}</span>
                       </div>
                     </td>
@@ -830,7 +836,7 @@ export function RollCallView({ state, user, run }) {
                 <tr key={s.id}>
                   <td>
                     <div className="row" style={{ flexWrap: 'nowrap' }}>
-                      <Avatar name={fullName(s)} />
+                      <Avatar src={photoOf(s)} name={fullName(s)} />
                       <span className="strong">{fullName(s)}</span>
                     </div>
                   </td>

@@ -2,7 +2,7 @@
   "name": "N°1 — L’école connectée",
   "short_name": "N°1",
   "description": "Plateforme de gestion scolaire : élèves, parents, enseignants et administration.",
-  "lang": "fr",
+  "lang": "fr-GN",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Icon from '../Icon';
 import { Badge, Card, PageHead } from '../ui';
 import { motion, EASE } from '../motion';
+import { Typewriter } from '../fx';
 import { byId, userForPerson } from '@/lib/compute';
 import { assistantContext, localAnswer, remoteAnswer } from '@/lib/assistant';
 import { recommendations } from '@/lib/gamification';
@@ -33,6 +34,7 @@ export function AssistantView({ state, user, go }) {
   const [messages, setMessages] = useState([]);
   const [online, setOnline] = useState(null); // null = inconnu, true = IA, false = local
   const endRef = useRef(null);
+  const mountedAt = useRef(Date.now());
 
   useEffect(() => setMessages(loadHistory(studentId)), [studentId]);
   useEffect(() => {
@@ -114,7 +116,13 @@ export function AssistantView({ state, user, go }) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.25, ease: EASE }}
                 >
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                  <div style={{ whiteSpace: 'pre-wrap' }}>
+                    {m.role === 'assistant' && m.at > mountedAt.current ? (
+                      <Typewriter text={m.content} onDone={() => endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })} />
+                    ) : (
+                      m.content
+                    )}
+                  </div>
                   {m.solution && <Solution text={m.solution} />}
                   {m.quiz && <Quiz quiz={m.quiz} />}
                   {m.resources?.length > 0 && (

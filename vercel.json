@@ -6,15 +6,26 @@
   "outputDirectory": "ecole/out",
   "cleanUrls": true,
   "functions": {
-    "api/assistant.js": { "maxDuration": 60 }
+    "api/assistant.js": {
+      "maxDuration": 60
+    }
   },
   "headers": [
     {
       "source": "/sw.js",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache" },
-        { "key": "Service-Worker-Allowed", "value": "/" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
       ]
     }
+  ],
+  "regions": [
+    "cdg1"
   ]
 }

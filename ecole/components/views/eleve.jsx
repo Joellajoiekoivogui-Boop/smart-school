@@ -1,8 +1,9 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Icon from '../Icon';
+import { photoOf } from '@/lib/avatars';
 import { Reveal, motion, EASE } from '../motion';
-import { Badge, Bar, Card, Empty, LineChart, PageHead, Stat } from '../ui';
+import { Badge, Bar, Card, Empty, LineChart, PageHead, Stat, Hero, Wave, Stagger, StaggerItem, Avatar } from '../ui';
 import {
   attendanceStats,
   byId,
@@ -17,6 +18,7 @@ import {
   studentClass,
   teacherName,
   timeAgo,
+  fullName,
 } from '@/lib/compute';
 import { TIME_SLOTS } from '@/lib/seed';
 import * as A from '@/lib/actions';
@@ -66,17 +68,22 @@ export function EleveDashboard({ state, user, go }) {
 
   return (
     <>
-      <Reveal className="hero">
-        <div>
-          <h1>Bonjour {student.firstName} 👋</h1>
+      <Hero>
+        <div className="row" style={{ gap: 16, flexWrap: 'nowrap' }}>
+          <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 14, delay: 0.15 }} whileHover={{ scale: 1.08 }}>
+            <Avatar src={photoOf(student)} name={fullName(student)} size="lg" dark />
+          </motion.div>
+          <div>
+          <h1>Bonjour {student.firstName} <Wave /></h1>
           <p>
             Voici votre résumé scolaire — {cls.name} · {formatDate(todayISO(), { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
+          </div>
         </div>
         <button className="btn btn-primary" onClick={() => go('entrainement')}>
           <Icon name="brain" size={16} /> S’entraîner
         </button>
-      </Reveal>
+      </Hero>
       <PrioritiesCard state={state} user={user} go={go} />
       <div className="grid g-4 mt">
         <Stat label="Moyenne générale" value={formatNote(avg)} unit="/ 20" icon="chart" tone="blue" sub={rank ? `${rank.rank}${rank.rank === 1 ? 'er' : 'e'} sur ${rank.size}` : ''} />
@@ -305,7 +312,9 @@ export function TrainingView({ state, user, run }) {
         // Thème dominant de la série (pour le suivi des difficultés).
         const topics = session.questions.map((x) => x.topic);
         const topic = session.topic || topics.sort((a, b) => topics.filter((t) => t === b).length - topics.filter((t) => t === a).length)[0];
-        run(A.recordTraining, { subjectId: session.subjectId, topic, score: session.correct, total: session.questions.length });
+        const total = session.questions.length;
+        const cheer = session.correct === total ? '🎉 Sans faute ! +20 XP de bonus' : session.correct / total >= 0.8 ? '🎉 Bravo, séance réussie !' : undefined;
+        run(A.recordTraining, { subjectId: session.subjectId, topic, score: session.correct, total }, cheer);
       }
       setSession({ ...session, index: nextIndex, selected: null, checked: false });
     };
@@ -388,10 +397,17 @@ export function TrainingView({ state, user, run }) {
       <div className="grid g-main" style={{ marginBottom: 18 }}>
         <Card className="game-card">
           <div className="row" style={{ gap: 20, alignItems: 'center' }}>
-            <div className="level-badge" aria-label={`Niveau ${game.level.number}`}>
+            <motion.div
+              className="level-badge"
+              aria-label={`Niveau ${game.level.number}`}
+              initial={{ scale: 0, rotate: -30 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 12, delay: 0.2 }}
+              whileHover={{ scale: 1.08, rotate: 4 }}
+            >
               <span className="tiny">Niveau</span>
               <strong>{game.level.number}</strong>
-            </div>
+            </motion.div>
             <div style={{ flex: 1, minWidth: 200 }}>
               <div className="row between">
                 <h2>{game.level.name}</h2>
@@ -444,14 +460,25 @@ export function TrainingView({ state, user, run }) {
               </div>
             </div>
           </div>
-          <div className="badges mt">
+          <Stagger className="badges mt">
             {game.badges.map((b) => (
-              <div key={b.id} className={`badge-tile ${b.earned ? 'earned' : ''}`} title={`${b.name} — ${b.desc}`}>
-                <span className="badge-icon">{b.icon}</span>
+              <StaggerItem
+                key={b.id}
+                className={`badge-tile ${b.earned ? 'earned' : ''}`}
+                title={`${b.name} — ${b.desc}`}
+                whileHover={b.earned ? { scale: 1.08, rotate: -3 } : { scale: 1.03 }}
+              >
+                <motion.span
+                  className="badge-icon"
+                  animate={b.earned ? { y: [0, -4, 0] } : undefined}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: Math.random() * 1.5 }}
+                >
+                  {b.icon}
+                </motion.span>
                 <span className="tiny strong">{b.name}</span>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
           <p className="tiny muted mt">Tes points et badges sont personnels : ils mesurent tes efforts, pas un classement entre élèves.</p>
         </Card>
         <Card title="Recommandé pour toi">
@@ -479,7 +506,7 @@ export function TrainingView({ state, user, run }) {
           const st = stats[s.id];
           const topics = [...new Set(state.exercises.filter((x) => x.subjectId === s.id).map((x) => x.topic))];
           return (
-            <Reveal key={s.id} className="card subject-tile" whileHover={{ y: -3 }}>
+            <Reveal key={s.id} className="card subject-tile" whileHover={{ y: -6, scale: 1.015 }} whileTap={{ scale: 0.99 }}>
               <div className="row between">
                 <h3>{s.name}</h3>
                 {st ? <Badge tone={st.score / st.total >= 0.7 ? 'green' : st.score / st.total >= 0.5 ? 'orange' : 'red'}>{Math.round((st.score / st.total) * 100)} %</Badge> : <Badge>Nouveau</Badge>}
@@ -502,6 +529,7 @@ export function TrainingView({ state, user, run }) {
         })}
       </div>
       <Card className="mt" title="Mes dernières séances" flush>
+        <div className="table-wrap">
         <table className="table">
           <thead>
             <tr>
@@ -526,6 +554,7 @@ export function TrainingView({ state, user, run }) {
             ))}
           </tbody>
         </table>
+        </div>
         {!attempts.length && <Empty>Aucune séance pour le moment.</Empty>}
       </Card>
     </>

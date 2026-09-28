@@ -5,7 +5,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '../Icon';
-import { Avatar, Badge, Bar, Card, Empty, Field, Grade, HBars, LineChart, Modal, PageHead, Ring, Select, Stat, Tabs } from '../ui';
+import { photoOf, userPhoto } from '@/lib/avatars';
+import { Avatar, Badge, Bar, Card, Empty, Field, Grade, HBars, LineChart, Modal, PageHead, Ring, Select, Stagger, StaggerItem, Stat, Tabs } from '../ui';
 import {
   attendanceStats,
   byId,
@@ -322,7 +323,7 @@ export function MessagesView({ state, user, run, params, go }) {
               const unread = state.messages.filter((m) => m.from === p.id && m.to === user.id && !m.read).length;
               return (
                 <button key={p.id} className={`chat-contact ${p.id === activeId ? 'active' : ''}`} onClick={() => go(`messages/${p.id}`)}>
-                  <Avatar name={p.name} />
+                  <Avatar src={userPhoto(state, p)} name={p.name} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div className="row between" style={{ gap: 6, flexWrap: 'nowrap' }}>
                       <span className="strong ellipsis small">{p.name}</span>
@@ -340,7 +341,7 @@ export function MessagesView({ state, user, run, params, go }) {
               <>
                 <div className="row between" style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
                   <div className="row">
-                    <Avatar name={active.name} />
+                    <Avatar src={userPhoto(state, active)} name={active.name} />
                     <div>
                       <div className="strong">{active.name}</div>
                       <div className="tiny muted">{roleLabel(active)}</div>
@@ -429,18 +430,25 @@ export function PrioritiesCard({ state, user, go }) {
   }
   return (
     <Card title="À traiter en priorité" className="mt priorities">
-      <div className="priority-grid">
+      <Stagger className="priority-grid">
         {list.map((p) => {
           const [label, tone] = SEVERITY[p.severity] || ['Info', 'blue'];
           return (
-            <button key={p.id} className={`priority priority-${tone}`} onClick={() => p.link && go(p.link)}>
+            <StaggerItem
+              as="button"
+              key={p.id}
+              className={`priority priority-${tone}`}
+              onClick={() => p.link && go(p.link)}
+              whileHover={{ y: -3, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <Badge tone={tone}>{label}</Badge>
               <span className="strong small">{p.title}</span>
               {p.body && <span className="tiny muted ellipsis">{p.body}</span>}
-            </button>
+            </StaggerItem>
           );
         })}
-      </div>
+      </Stagger>
     </Card>
   );
 }
@@ -622,6 +630,27 @@ export function BulletinModal({ state, studentId, termId, onClose }) {
   );
 }
 
+/** En-tête officiel des documents scolaires guinéens (bulletins, reçus). */
+export function OfficialHeader({ school }) {
+  return (
+    <div className="official-head">
+      <div>
+        <div className="strong">{(school.ministry || '').toUpperCase()}</div>
+        <div className="tiny">{school.region}</div>
+      </div>
+      <div className="official-flag" aria-label="Drapeau de la Guinée">
+        <span style={{ background: '#CE1126' }} />
+        <span style={{ background: '#FCD116' }} />
+        <span style={{ background: '#009460' }} />
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <div className="strong">{(school.country || 'République de Guinée').toUpperCase()}</div>
+        <div className="tiny">{school.motto}</div>
+      </div>
+    </div>
+  );
+}
+
 /** Contenu imprimable d'un bulletin (utilisé seul ou en lot pour toute une classe). */
 export function BulletinSheet({ state, studentId, termId }) {
   const rc = reportCard(state, studentId, termId);
@@ -629,11 +658,12 @@ export function BulletinSheet({ state, studentId, termId }) {
   const published = state.bulletinsPublished?.[`${rc.cls.id}-${termId}`];
   return (
     <div className="bulletin">
+      <OfficialHeader school={state.school} />
       <div className="bulletin-head">
         <div>
           <h2>{state.school.name}</h2>
           <div className="small">
-            {state.school.city} · Année scolaire {state.school.year}
+            {[state.school.commune, state.school.city].filter(Boolean).join(', ')} · Année scolaire {state.school.year}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
@@ -643,8 +673,11 @@ export function BulletinSheet({ state, studentId, termId }) {
       </div>
       <div className="row between mt">
         <div>
-          <div className="strong" style={{ fontSize: 16 }}>
-            {fullName(rc.student)}
+          <div className="row" style={{ gap: 10, flexWrap: 'nowrap' }}>
+            <img className="bulletin-photo" src={photoOf(rc.student)} alt="" />
+            <div className="strong" style={{ fontSize: 16 }}>
+              {fullName(rc.student)}
+            </div>
           </div>
           <div className="small">
             Matricule {rc.student.matricule} · Né(e) le {formatDate(rc.student.birthDate, { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -988,7 +1021,7 @@ function SubmitModal({ homework, run, onClose }) {
   const [content, setContent] = useState(homework.submission?.content || '');
   const [fileName, setFileName] = useState(homework.submission?.fileName || '');
   const submit = () => {
-    const res = run(A.submitHomework, { homeworkId: homework.id, content, fileName }, 'Devoir remis avec succès.');
+    const res = run(A.submitHomework, { homeworkId: homework.id, content, fileName }, '🎉 Devoir remis avec succès !');
     if (res.ok) onClose();
   };
   return (
@@ -1246,10 +1279,11 @@ export function ReceiptModal({ state, payment, onClose }) {
       }
     >
       <div className="bulletin print-area">
+        <OfficialHeader school={state.school} />
         <div className="bulletin-head">
           <div>
             <h2>{state.school.name}</h2>
-            <div className="small">{state.school.city}</div>
+            <div className="small">{[state.school.commune, state.school.city].filter(Boolean).join(', ')} — Guinée</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div className="strong">REÇU DE PAIEMENT</div>
@@ -1414,7 +1448,7 @@ function OnlinePaymentModal({ state, run, studentId, onClose, onPaid }) {
       setError('Code incorrect.');
       return;
     }
-    const res = run(A.payOnline, { studentId, ...form }, 'Paiement confirmé : reçu disponible.');
+    const res = run(A.payOnline, { studentId, ...form }, '🎉 Paiement confirmé : reçu disponible.');
     if (res.ok) onPaid(res.result);
   };
   return (
@@ -1429,7 +1463,7 @@ function OnlinePaymentModal({ state, run, studentId, onClose, onPaid }) {
             </button>
             <button
               className="btn btn-primary"
-              disabled={!amount || form.phone.replace(/\D/g, '').length < 9 || amount > pay.balance}
+              disabled={!amount || !A.normalizeGuineaMobile(form.phone) || amount > pay.balance}
               onClick={() => {
                 setError('');
                 setStep(2);
@@ -1468,8 +1502,18 @@ function OnlinePaymentModal({ state, run, studentId, onClose, onPaid }) {
             <Field label="Montant (GNF)">
               <input className="input num" inputMode="numeric" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value.replace(/\D/g, '') })} />
             </Field>
-            <Field label={`Numéro ${form.method}`}>
-              <input className="input" inputMode="tel" placeholder="+224 6.. .. .. .." value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <Field label={`Numéro ${form.method} (Guinée)`}>
+              <div className="phone-field">
+                <span className="phone-prefix">🇬🇳 +224</span>
+                <input
+                  className="input"
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  placeholder="6xx xx xx xx"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: A.formatGuineaPhone(e.target.value.replace(/^\+?224\s*/, '')) })}
+                />
+              </div>
             </Field>
           </div>
           {amount > pay.balance && <p className="small" style={{ color: 'var(--red-700)' }}>Le montant dépasse le reste à payer.</p>}
@@ -1488,7 +1532,7 @@ function OnlinePaymentModal({ state, run, studentId, onClose, onPaid }) {
           <div className="alert alert-orange small">
             <Icon name="phone" size={16} />
             <div>
-              Un code de confirmation a été envoyé au <strong>{form.phone}</strong> pour un paiement de <strong>{formatMoney(amount)}</strong> via {form.method}.
+              Un code de confirmation a été envoyé au <strong>+224 {form.phone}</strong> pour un paiement de <strong>{formatMoney(amount)}</strong> via {form.method}.
               <div className="tiny" style={{ marginTop: 4 }}>
                 Démonstration : le code est <strong className="num">{code}</strong>.
               </div>
@@ -1521,7 +1565,7 @@ export function TeachersView({ state, user, studentId, go }) {
           return (
             <Card key={t.id}>
               <div className="row">
-                <Avatar name={fullName(t)} size="lg" />
+                <Avatar src={photoOf(t, 'teacher')} name={fullName(t)} size="lg" />
                 <div>
                   <h3>{teacherName(state, t.id)}</h3>
                   <div className="small muted">{t.subjectIds.map((id) => byId(state.subjects, id)?.name).join(' · ')}</div>

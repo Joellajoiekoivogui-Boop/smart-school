@@ -1,8 +1,10 @@
 'use client';
 import { useId, useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { Sparkles, spotlightHandlers, useTilt } from './fx';
+import { preparePhoto } from '@/lib/avatars';
 import Icon from './Icon';
-import { EASE, itemVariants } from './motion';
+import { AnimatedValue, EASE, SPRING, inViewProps, itemVariants, listItemVariants, listVariants } from './motion';
 import { formatDate, formatNote } from '@/lib/compute';
 
 export function PageHead({ title, subtitle, children }) {
@@ -19,7 +21,13 @@ export function PageHead({ title, subtitle, children }) {
 
 export function Card({ title, action, children, className = '', flush = false }) {
   return (
-    <motion.section className={`card ${flush ? 'flush' : ''} ${className}`} variants={itemVariants}>
+    <motion.section
+      className={`card ${flush ? 'flush' : ''} ${className}`}
+      variants={itemVariants}
+      {...inViewProps(0.08)}
+      {...spotlightHandlers()}
+    >
+      <span aria-hidden className="spotlight spotlight-px" />
       {(title || action) && (
         <div className="card-head">
           {title && <h2>{title}</h2>}
@@ -32,18 +40,20 @@ export function Card({ title, action, children, className = '', flush = false })
 }
 
 export function Stat({ label, value, unit, sub, icon, tone = 'blue', children }) {
+  const tilt = useTilt(7);
   return (
-    <motion.div className="card stat" variants={itemVariants} whileHover={{ y: -2 }}>
+    <motion.div className={`card stat stat-${tone}`} variants={itemVariants} whileHover="hover" {...tilt}>
+      <span aria-hidden className="spotlight" />
       <div className="stat-top">
         <span className="stat-label">{label}</span>
         {icon && (
-          <span className={`stat-icon tone-${tone}`}>
+          <motion.span className={`stat-icon tone-${tone}`} variants={{ hover: { rotate: -12, scale: 1.15, transition: SPRING } }}>
             <Icon name={icon} size={18} />
-          </span>
+          </motion.span>
         )}
       </div>
       <div className={`stat-value num ${String(value).length > 9 ? 'long' : ''}`}>
-        {value}
+        <AnimatedValue value={value} />
         {unit && <small> {unit}</small>}
       </div>
       {sub && <div className="stat-sub">{sub}</div>}
@@ -61,7 +71,11 @@ export function Badge({ tone = 'gray', children, icon }) {
   );
 }
 
-export function Avatar({ name, size, dark }) {
+export function Avatar({ name, size, dark, src }) {
+  const cls = `avatar ${size === 'lg' ? 'avatar-lg' : size === 'xl' ? 'avatar-xl' : ''} ${dark ? 'avatar-dark' : ''}`;
+  if (src) {
+    return <img className={`${cls} avatar-img`} src={src} alt={name ? `Photo de ${name}` : ''} loading="lazy" decoding="async" draggable={false} />;
+  }
   const initials = (name || '?')
     .replace(/^(M\.|Mme)\s+/, '')
     .split(/\s+/)
@@ -69,7 +83,53 @@ export function Avatar({ name, size, dark }) {
     .slice(0, 2)
     .join('')
     .toUpperCase();
-  return <span className={`avatar ${size === 'lg' ? 'avatar-lg' : ''} ${dark ? 'avatar-dark' : ''}`}>{initials}</span>;
+  return <span className={cls}>{initials}</span>;
+}
+
+/**
+ * Choix d'une photo de profil : appareil photo du téléphone ou galerie.
+ * L'image est recadrée et allégée avant d'être transmise à `onChange`.
+ */
+export function PhotoPicker({ src, name, onChange, hasPhoto }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const handle = async (file) => {
+    if (!file) return;
+    setBusy(true);
+    setError('');
+    try {
+      onChange(await preparePhoto(file));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="photo-picker">
+      <motion.div className="photo-frame" whileHover={{ scale: 1.04, rotate: -2 }} transition={SPRING}>
+        <Avatar src={src} name={name} size="xl" />
+        {busy && <span className="photo-busy" aria-label="Traitement…" />}
+      </motion.div>
+      <div className="stack" style={{ gap: 8, flex: 1, minWidth: 180 }}>
+        <label className="btn btn-primary btn-sm">
+          <Icon name="camera" size={15} /> Prendre une photo
+          <input type="file" accept="image/*" capture="user" hidden onChange={(e) => handle(e.target.files?.[0])} />
+        </label>
+        <label className="btn btn-sm">
+          <Icon name="upload" size={15} /> Choisir dans la galerie
+          <input type="file" accept="image/*" hidden onChange={(e) => handle(e.target.files?.[0])} />
+        </label>
+        {hasPhoto && (
+          <button type="button" className="btn btn-sm btn-ghost" onClick={() => onChange(null)}>
+            Retirer la photo
+          </button>
+        )}
+        {error && <span className="tiny" style={{ color: 'var(--red-700)' }}>{error}</span>}
+        {!hasPhoto && <span className="tiny muted">Portrait illustré en attendant une vraie photo.</span>}
+      </div>
+    </div>
+  );
 }
 
 export function Empty({ children = 'Rien à afficher pour le moment.' }) {
@@ -80,7 +140,7 @@ export function Bar({ value, max = 100, tone }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
     <div className={`bar ${tone || ''}`} role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
-      <motion.span initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: EASE, delay: 0.15 }} />
+      <motion.span initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ type: 'spring', stiffness: 90, damping: 18, delay: 0.2 }} />
     </div>
   );
 }
@@ -125,9 +185,10 @@ export function Modal({ title, onClose, children, footer, wide }) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        initial={{ opacity: 0, y: 16, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.28, ease: EASE }}
+        initial={{ opacity: 0, y: 40, scale: 0.9, rotateX: 8 }}
+        animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+        style={{ transformPerspective: 900 }}
       >
         <div className="modal-head no-print">
           <h2>{title}</h2>
@@ -186,7 +247,7 @@ export function Ring({ value, size = 88, stroke = 9, color = 'var(--blue)', labe
         />
       </svg>
       <div className="ring-label" style={{ fontSize: size / 5 }}>
-        {label ?? `${Math.round(pct)} %`}
+        {label ?? <AnimatedValue value={`${Math.round(pct)} %`} />}
       </div>
     </div>
   );
@@ -286,6 +347,17 @@ export function LineChart({ points, height = 200, min = 0, max = 20, format = fo
             transition={{ duration: 0.25, delay: 0.1 + (i / Math.max(1, points.length - 1)) * 0.8 }}
           />
         ))}
+        <motion.circle
+          cx={x(points.length - 1)}
+          cy={y(last.value)}
+          r={6}
+          fill="none"
+          stroke="#2563EB"
+          strokeWidth="2"
+          initial={{ opacity: 0 }}
+          animate={{ r: [6, 16], opacity: [0.6, 0] }}
+          transition={{ duration: 1.6, repeat: Infinity, delay: 1, ease: 'easeOut' }}
+        />
         <motion.text
           x={x(points.length - 1) + 10}
           y={y(last.value) + 4}
@@ -336,7 +408,7 @@ export function HBars({ rows, max = 20, format = formatNote, markLabel = 'Moyenn
                 className="hbar-fill"
                 initial={{ width: 0 }}
                 animate={{ width: `${((r.value ?? 0) / max) * 100}%` }}
-                transition={{ duration: 0.7, ease: EASE, delay: 0.1 + i * 0.04 }}
+                transition={{ type: 'spring', stiffness: 80, damping: 16, delay: 0.1 + i * 0.06 }}
               />
               {r.mark != null && <div className="hbar-mark" style={{ left: `${(r.mark / max) * 100}%` }} />}
             </div>
@@ -369,5 +441,79 @@ export function Select({ value, onChange, options, className = 'select', ...rest
         </option>
       ))}
     </select>
+  );
+}
+
+/**
+ * Bandeau d'accueil animé : dégradé qui ondule, halos lumineux qui flottent
+ * et motif discret en arrière-plan.
+ */
+export function Hero({ children, className = '' }) {
+  // Parallaxe : les halos suivent (doucement) le pointeur.
+  const px = useMotionValue(0);
+  const py = useMotionValue(0);
+  const sx = useSpring(px, { stiffness: 60, damping: 18 });
+  const sy = useSpring(py, { stiffness: 60, damping: 18 });
+  const x1 = useTransform(sx, [-1, 1], [-40, 40]);
+  const y1 = useTransform(sy, [-1, 1], [-30, 30]);
+  const x2 = useTransform(sx, [-1, 1], [30, -30]);
+  const y2 = useTransform(sy, [-1, 1], [24, -24]);
+  return (
+    <motion.div
+      className={`hero relative isolate overflow-hidden bg-[linear-gradient(120deg,#0f172a_0%,#1e3a8a_45%,#2563eb_75%,#4f46e5_100%)] bg-[length:220%_220%] animate-gradient ${className}`}
+      variants={itemVariants}
+      onPointerMove={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        px.set(((e.clientX - r.left) / r.width) * 2 - 1);
+        py.set(((e.clientY - r.top) / r.height) * 2 - 1);
+      }}
+      onPointerLeave={() => {
+        px.set(0);
+        py.set(0);
+      }}
+    >
+      <motion.span aria-hidden style={{ x: x1, y: y1 }} className="pointer-events-none absolute -top-24 -right-16 -z-10 h-72 w-72 rounded-full bg-sky-400/30 blur-3xl" />
+      <motion.span aria-hidden style={{ x: x2, y: y2 }} className="pointer-events-none absolute -bottom-28 left-1/4 -z-10 h-72 w-72 rounded-full bg-indigo-500/35 blur-3xl" />
+      <span aria-hidden className="pointer-events-none absolute top-6 left-6 -z-10 h-24 w-24 rounded-full bg-emerald-400/20 blur-2xl animate-float" />
+      <Sparkles />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12] [background-image:radial-gradient(rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:18px_18px] [mask-image:linear-gradient(to_left,black,transparent_70%)]"
+      />
+      {children}
+    </motion.div>
+  );
+}
+
+/** Main qui salue 👋 (petite animation de bienvenue). */
+export function Wave() {
+  return (
+    <motion.span
+      className="inline-block origin-[70%_70%]"
+      animate={{ rotate: [0, 18, -8, 18, -4, 10, 0] }}
+      transition={{ duration: 1.8, delay: 0.6, repeat: Infinity, repeatDelay: 4 }}
+      aria-hidden
+    >
+      👋
+    </motion.span>
+  );
+}
+
+/** Conteneur dont les enfants <StaggerItem> apparaissent en cascade. */
+export function Stagger({ as = 'div', className, children }) {
+  const Tag = motion[as];
+  return (
+    <Tag className={className} variants={listVariants} {...inViewProps(0.1)}>
+      {children}
+    </Tag>
+  );
+}
+
+export function StaggerItem({ as = 'div', className, children, ...rest }) {
+  const Tag = motion[as];
+  return (
+    <Tag className={className} variants={listItemVariants} {...rest}>
+      {children}
+    </Tag>
   );
 }

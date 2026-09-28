@@ -1,7 +1,9 @@
 'use client';
 import Icon from '../Icon';
+import { photoOf, userPhoto } from '@/lib/avatars';
+import * as A from '@/lib/actions';
 import { Reveal } from '../motion';
-import { Avatar, Badge, Bar, Card, Empty, LineChart, PageHead, Stat } from '../ui';
+import { Avatar, Badge, Bar, Card, Empty, LineChart, PageHead, Stat, Hero, Wave, PhotoPicker } from '../ui';
 import {
   attendanceStats,
   byId,
@@ -45,15 +47,15 @@ export function ParentDashboard({ state, user, studentId, go }) {
   const notifs = notificationsFor(state, user).slice(0, 6);
   return (
     <>
-      <Reveal className="hero">
+      <Hero>
         <div>
           <h1>
-            Bonjour, {parent.title} {parent.lastName} 👋
+            Bonjour, {parent.title} {parent.lastName} <Wave />
           </h1>
           <p>Voici la situation scolaire de {childrenOf(state, user).length > 1 ? 'vos enfants' : 'votre enfant'}.</p>
         </div>
         <div className="row" style={{ gap: 12 }}>
-          <Avatar name={fullName(s.child)} dark />
+          <Avatar src={photoOf(s.child)} name={fullName(s.child)} dark />
           <div>
             <div className="strong">{fullName(s.child)}</div>
             <div className="small" style={{ color: '#cbd5e1' }}>
@@ -61,7 +63,7 @@ export function ParentDashboard({ state, user, studentId, go }) {
             </div>
           </div>
         </div>
-      </Reveal>
+      </Hero>
       <PrioritiesCard state={state} user={user} go={go} />
 
       <div className="grid g-4 mt">
@@ -140,7 +142,7 @@ export function ParentDashboard({ state, user, studentId, go }) {
   );
 }
 
-export function ChildrenView({ state, user, go }) {
+export function ChildrenView({ state, user, run, go }) {
   const kids = childrenOf(state, user);
   return (
     <>
@@ -152,7 +154,7 @@ export function ChildrenView({ state, user, go }) {
           return (
             <Card key={k.id}>
               <div className="row">
-                <Avatar name={fullName(k)} size="lg" />
+                <Avatar src={photoOf(k)} name={fullName(k)} size="lg" />
                 <div>
                   <h2>{fullName(k)}</h2>
                   <div className="small muted">
@@ -177,6 +179,14 @@ export function ChildrenView({ state, user, go }) {
                   <Bar value={s.pay.percent} tone={s.pay.overdue > 0 ? 'red' : 'green'} />
                 </dd>
               </dl>
+              <div className="mt">
+                <PhotoPicker
+                  src={photoOf(k)}
+                  name={fullName(k)}
+                  hasPhoto={Boolean(k.photo)}
+                  onChange={(dataUrl) => run(A.setPhoto, { kind: 'student', id: k.id, dataUrl }, dataUrl ? `🎉 Photo de ${k.firstName} enregistrée !` : 'Photo retirée.')}
+                />
+              </div>
             </Card>
           );
         })}
