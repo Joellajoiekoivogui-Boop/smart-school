@@ -19,7 +19,7 @@ window.DECLARATION = {
 
   /* 1. SON PRÉNOM — il s'écrit progressivement à l'écran.
         Exemple : "Aïcha", "Mariam", "Ibrahima"…                              */
-  prenom: "Mon amour",
+  prenom: "Mata Bah",
 
   /* 2. L'ÉCRAN D'ACCUEIL                                                       */
   accueil: {
