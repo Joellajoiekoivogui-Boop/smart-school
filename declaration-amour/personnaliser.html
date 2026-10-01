@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Personnaliser ma déclaration 💌</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#12030c">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 92'%3E%3Cpath fill='%23ff4f8b' d='M50 88C47 85 8 60 4 34C1 16 12 4 27 4C38 4 46 11 50 20C54 11 62 4 73 4C88 4 99 16 96 34C92 60 53 85 50 88Z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/polices.css">
+  <link rel="stylesheet" href="css/editeur.css">
+  <script src="config.js" defer></script>
+  <script src="js/outils.js" defer></script>
+  <script src="js/editeur.js" defer></script>
+</head>
+<body>
+  <div class="fond" aria-hidden="true"></div>
+
+  <div class="page">
+    <main class="atelier">
+      <header class="entete">
+        <p class="surtitre">L’atelier</p>
+        <h1>Personnalise ta déclaration</h1>
+        <p class="chapo">Remplis les champs, regarde l’aperçu, puis envoie le lien à la personne qui fait battre ton cœur. Rien n’est envoyé nulle part : tout reste dans ton navigateur et dans le lien.</p>
+      </header>
+
+      <form id="formulaire" class="formulaire" novalidate autocomplete="off">
+
+        <fieldset class="bloc">
+          <legend><span class="num">1</span>Pour qui&nbsp;?</legend>
+          <label class="champ">
+            <span class="etiquette">Son prénom <em>il s’écrit à la main sur l’écran</em></span>
+            <input id="f-prenom" type="text" maxlength="60" placeholder="Aïcha" enterkeyhint="next">
+          </label>
+          <label class="champ">
+            <span class="etiquette">Ta signature <em>en bas de la lettre</em></span>
+            <input id="f-signature" type="text" maxlength="60" placeholder="Ton prénom" enterkeyhint="next">
+          </label>
+        </fieldset>
+
+        <fieldset class="bloc">
+          <legend><span class="num">2</span>L’écran d’accueil</legend>
+          <label class="champ">
+            <span class="etiquette">Phrase au-dessus du cœur</span>
+            <input id="f-accueil-titre" type="text" maxlength="120">
+          </label>
+          <label class="champ">
+            <span class="etiquette">Invitation sous le cœur</span>
+            <input id="f-invitation" type="text" maxlength="80">
+          </label>
+        </fieldset>
+
+        <fieldset class="bloc">
+          <legend><span class="num">3</span>Les messages</legend>
+          <label class="champ">
+            <span class="etiquette">Grand message <em>après l’explosion de cœurs</em></span>
+            <input id="f-grand-message" type="text" maxlength="40">
+          </label>
+          <label class="champ">
+            <span class="etiquette">Avant le prénom</span>
+            <input id="f-avant-prenom" type="text" maxlength="60">
+          </label>
+          <label class="champ">
+            <span class="etiquette">Petits messages <em>un par ligne · le dernier est mis en valeur</em></span>
+            <textarea id="f-messages" rows="5"></textarea>
+          </label>
+          <label class="champ">
+            <span class="etiquette">Texte du bouton</span>
+            <input id="f-bouton" type="text" maxlength="60">
+          </label>
+        </fieldset>
+
+        <fieldset class="bloc">
+          <legend><span class="num">4</span>La lettre</legend>
+          <label class="champ">
+            <span class="etiquette">Écrit sur l’enveloppe</span>
+            <input id="f-enveloppe" type="text" maxlength="40">
+          </label>
+          <label class="champ">
+            <span class="etiquette">Première ligne <em>vide = son prénom suivi d’une virgule</em></span>
+            <input id="f-lettre-titre" type="text" maxlength="60">
+          </label>
+          <label class="champ">
+            <span class="etiquette">Ta déclaration <em>laisse une ligne vide entre deux paragraphes</em></span>
+            <textarea id="f-lettre" rows="12"></textarea>
+          </label>
+          <label class="champ">
+            <span class="etiquette">Formule de fin</span>
+            <input id="f-formule" type="text" maxlength="80">
+          </label>
+        </fieldset>
+
+        <fieldset class="bloc">
+          <legend><span class="num">5</span>L’ambiance</legend>
+          <div class="champ">
+            <span class="etiquette" id="titre-couleur">Couleur du thème</span>
+            <div class="nuancier" id="nuancier" role="radiogroup" aria-labelledby="titre-couleur"></div>
+          </div>
+          <div class="champ">
+            <span class="etiquette" id="titre-musique">Musique <em>elle démarre au clic sur le cœur</em></span>
+            <div class="choix" role="radiogroup" aria-labelledby="titre-musique">
+              <label><input type="radio" name="musique" value="boite"> Boîte à musique incluse <em>(Canon de Pachelbel)</em></label>
+              <label><input type="radio" name="musique" value="fichier"> Ta chanson <em>(lien vers un fichier .mp3)</em></label>
+              <label><input type="radio" name="musique" value="aucune"> Sans musique</label>
+            </div>
+            <input id="f-musique-fichier" class="sous-champ" type="url" inputmode="url" placeholder="https://…/chanson.mp3  ou  medias/chanson.mp3">
+          </div>
+        </fieldset>
+
+        <fieldset class="bloc">
+          <legend><span class="num">6</span>Les photos <em>facultatif</em></legend>
+          <label class="champ">
+            <span class="etiquette">Titre de la galerie</span>
+            <input id="f-photos-titre" type="text" maxlength="60">
+          </label>
+          <div class="liste-photos" id="liste-photos"></div>
+          <button type="button" class="bouton-ajout" id="ajouter-photo">+ Ajouter une photo</button>
+          <p class="aide">Colle le lien d’une image en ligne (https://…), ou le nom d’un fichier déposé dans le dossier <code>medias/</code> du site (ex. <code>medias/photo-1.jpg</code>).</p>
+        </fieldset>
+
+        <fieldset class="bloc">
+          <legend><span class="num">7</span>Réglages</legend>
+          <label class="interrupteur">
+            <input id="f-auto" type="checkbox">
+            <span>Les messages défilent tout seuls <em>sinon, un toucher pour passer au suivant</em></span>
+          </label>
+        </fieldset>
+
+        <section class="bloc bloc-lien" id="bloc-lien" aria-labelledby="titre-lien">
+          <h2 id="titre-lien"><span class="num">8</span>Envoyer</h2>
+          <label class="champ">
+            <span class="etiquette">Ton lien personnalisé</span>
+            <input id="lien" type="text" readonly>
+          </label>
+          <p class="aide" id="info-lien"></p>
+          <div class="rangee-boutons">
+            <button type="button" class="bouton bouton-plein" id="copier">Copier le lien</button>
+            <button type="button" class="bouton" id="partager">Envoyer…</button>
+            <a class="bouton" id="whatsapp" href="#" target="_blank" rel="noopener">WhatsApp</a>
+            <a class="bouton" id="ouvrir" href="index.html" target="_blank" rel="noopener">Ouvrir</a>
+          </div>
+          <div class="rangee-boutons secondaire">
+            <button type="button" class="bouton-lien" id="telecharger">Télécharger config.js</button>
+            <button type="button" class="bouton-lien" id="reinitialiser">Repartir de config.js</button>
+          </div>
+          <p class="aide">« Télécharger config.js » crée le fichier de réglages : remplace celui du site pour que la version de base soit la tienne, sans lien spécial.</p>
+        </section>
+      </form>
+    </main>
+
+    <aside class="apercu" aria-label="Aperçu">
+      <div class="apercu-colle">
+        <div class="telephone">
+          <div class="telephone-ecran" id="ecran-apercu"></div>
+        </div>
+        <button type="button" class="bouton-lien" id="rejouer-apercu">↻ Rejouer l’aperçu</button>
+      </div>
+    </aside>
+  </div>
+
+  <div class="barre-actions" role="toolbar" aria-label="Actions">
+    <button type="button" class="bouton" id="voir-apercu">▶ Aperçu</button>
+    <button type="button" class="bouton bouton-plein" id="aller-lien">Obtenir le lien 💌</button>
+  </div>
+
+  <div class="modale" id="modale" role="dialog" aria-modal="true" aria-label="Aperçu de la déclaration" hidden>
+    <div class="modale-ecran" id="modale-ecran"></div>
+    <button type="button" class="modale-fermer" id="fermer-modale" aria-label="Fermer l’aperçu">✕</button>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>J’ai quelque chose à te dire… ❤️</title>
+  <meta name="description" content="Un petit message rien que pour toi 💌">
+  <meta name="theme-color" content="#12030c">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- Aperçu quand le lien est partagé (WhatsApp, Messenger…) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="J’ai quelque chose à te dire… ❤️">
+  <meta property="og:description" content="Ouvre-moi 💌">
+  <meta property="og:image" content="apercu.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 92'%3E%3Cpath fill='%23ff4f8b' d='M50 88C47 85 8 60 4 34C1 16 12 4 27 4C38 4 46 11 50 20C54 11 62 4 73 4C88 4 99 16 96 34C92 60 53 85 50 88Z'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="icone.png">
+  <link rel="preload" href="fonts/cormorant-italique-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/great-vibes-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/polices.css">
+  <link rel="stylesheet" href="css/style.css">
+
+  <script>
+    // Repère une erreur de frappe dans config.js pour l'afficher clairement.
+    window.__erreursConfig = [];
+    window.addEventListener('error', function (e) {
+      if (e && e.filename && /config\.js/.test(e.filename)) {
+        window.__erreursConfig.push(e.message + (e.lineno ? ', ligne ' + e.lineno : ''));
+      }
+    });
+  </script>
+  <script src="config.js" defer></script>
+  <script src="js/outils.js" defer></script>
+  <script src="js/effets.js" defer></script>
+  <script src="js/musique.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <!-- Formes partagées : le cœur et ses dégradés -->
+  <svg class="sprites" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <path id="chemin-coeur" d="M50 88C47 85 8 60 4 34C1 16 12 4 27 4C38 4 46 11 50 20C54 11 62 4 73 4C88 4 99 16 96 34C92 60 53 85 50 88Z"/>
+      <linearGradient id="degrade-coeur" x1="0.1" y1="0" x2="0.75" y2="1">
+        <stop offset="0" class="stop-claire"/>
+        <stop offset="0.5" class="stop-principale"/>
+        <stop offset="1" class="stop-profonde"/>
+      </linearGradient>
+      <radialGradient id="reflet-coeur" cx="0.3" cy="0.24" r="0.42">
+        <stop offset="0" stop-color="#fff" stop-opacity="0.7"/>
+        <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+  </svg>
+
+  <div class="aurore" aria-hidden="true"></div>
+  <canvas id="ciel" class="ciel" aria-hidden="true"></canvas>
+  <div class="voile" aria-hidden="true"></div>
+
+  <main class="scenes" id="scenes" tabindex="-1">
+
+    <!-- 1. Accueil -->
+    <section class="scene scene-accueil est-active" id="accueil">
+      <div class="accueil-haut">
+        <p class="accueil-titre" id="titre-accueil"></p>
+      </div>
+      <button class="grand-coeur" id="grand-coeur" type="button" aria-label="Clique sur le cœur">
+        <span class="grand-coeur-halo" aria-hidden="true"></span>
+        <svg class="grand-coeur-onde" viewBox="0 0 100 92" aria-hidden="true" focusable="false"><use xlink:href="#chemin-coeur" href="#chemin-coeur"/></svg>
+        <svg class="grand-coeur-onde deux" viewBox="0 0 100 92" aria-hidden="true" focusable="false"><use xlink:href="#chemin-coeur" href="#chemin-coeur"/></svg>
+        <span class="grand-coeur-battement" aria-hidden="true">
+          <svg class="grand-coeur-svg" viewBox="0 0 100 92" focusable="false">
+            <use class="gc-base" xlink:href="#chemin-coeur" href="#chemin-coeur"/>
+            <use class="gc-reflet" xlink:href="#chemin-coeur" href="#chemin-coeur"/>
+            <path class="gc-brillance" d="M20 13C13 15 9 22 10 30"/>
+          </svg>
+        </span>
+      </button>
+      <div class="accueil-bas">
+        <p class="accueil-invite" id="invitation"></p>
+      </div>
+    </section>
+
+    <!-- 2. « JE T'AIME » -->
+    <section class="scene scene-jetaime" id="scene-jetaime">
+      <h1 class="jetaime" id="jetaime"></h1>
+    </section>
+
+    <!-- 3. Le prénom, écrit à la main -->
+    <section class="scene scene-prenom" id="scene-prenom">
+      <p class="avant-prenom" id="avant-prenom"></p>
+      <p class="ligne-prenom" id="ligne-prenom">
+        <span class="prenom" id="prenom"></span><span class="prenom-coeur" id="prenom-coeur" aria-hidden="true"><svg viewBox="0 0 100 92" focusable="false"><use xlink:href="#chemin-coeur" href="#chemin-coeur"/></svg></span>
+      </p>
+    </section>
+
+    <!-- 4. Les petits messages -->
+    <section class="scene scene-messages" id="scene-messages">
+      <div class="ornement" aria-hidden="true">
+        <span></span><svg viewBox="0 0 100 92" focusable="false"><use xlink:href="#chemin-coeur" href="#chemin-coeur"/></svg><span></span>
+      </div>
+      <div class="zone-messages" id="zone-messages"></div>
+      <button class="bouton-lettre" id="bouton-lettre" type="button" tabindex="-1"></button>
+      <p class="indice-suite" id="indice-suite" aria-hidden="true"></p>
+    </section>
+
+    <!-- 5. L'enveloppe -->
+    <section class="scene scene-enveloppe" id="scene-enveloppe">
+      <div class="env-cadre">
+        <button class="enveloppe" id="enveloppe" type="button" aria-label="Ouvrir la lettre">
+          <span class="env-corps" aria-hidden="true">
+            <span class="env-dos"></span>
+            <span class="env-papier"></span>
+            <span class="env-devant"></span>
+            <span class="env-texte" id="env-texte"></span>
+            <span class="env-rabat"></span>
+            <span class="env-sceau"><svg viewBox="0 0 100 92" focusable="false"><use xlink:href="#chemin-coeur" href="#chemin-coeur"/></svg></span>
+          </span>
+        </button>
+      </div>
+      <p class="env-indice" id="env-indice"></p>
+    </section>
+  </main>
+
+  <!-- 6. La lettre -->
+  <div class="lettre" id="lettre" role="dialog" aria-modal="true" aria-labelledby="lettre-titre" tabindex="-1" hidden>
+    <article class="papier">
+      <div class="papier-sceau" aria-hidden="true"><svg viewBox="0 0 100 92" focusable="false"><use xlink:href="#chemin-coeur" href="#chemin-coeur"/></svg></div>
+      <h2 class="papier-titre revele" id="lettre-titre"></h2>
+      <div class="papier-corps" id="lettre-corps"></div>
+      <p class="papier-formule revele" id="lettre-formule"></p>
+      <p class="papier-signature revele" id="lettre-signature"><span class="signature-encre"></span></p>
+      <svg class="papier-coeur revele" id="coeur-dessine" viewBox="0 0 120 100" aria-hidden="true" focusable="false">
+        <path class="trace" d="M60 88C52 82 18 62 12 38C7 18 22 8 34 10C46 12 54 22 60 34C65 21 76 9 90 10C104 11 114 26 106 45C99 62 76 78 60 88C57 90 52 91 48 89"/>
+      </svg>
+    </article>
+
+    <section class="souvenirs" id="souvenirs" hidden>
+      <h3 class="souvenirs-titre revele" id="souvenirs-titre"></h3>
+      <div class="polaroids" id="polaroids"></div>
+    </section>
+
+    <div class="lettre-fin revele" id="lettre-fin">
+      <button class="bouton-doux" id="bouton-rejouer" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg>
+        Revivre ce moment
+      </button>
+    </div>
+  </div>
+
+  <canvas id="magie" class="magie" aria-hidden="true"></canvas>
+  <div class="flash" id="flash" aria-hidden="true"></div>
+
+  <button class="bouton-son" id="bouton-son" type="button" aria-label="Musique" aria-pressed="true" title="Couper la musique">
+    <span class="barres" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+    <svg class="son-coupe" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/><path d="M3 3l18 18"/></svg>
+  </button>
+
+  <div class="visionneuse" id="visionneuse" role="dialog" aria-modal="true" aria-label="Photo agrandie" hidden>
+    <button class="visionneuse-bouton visionneuse-fermer" id="visionneuse-fermer" type="button" aria-label="Fermer">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <button class="visionneuse-bouton visionneuse-prec" id="visionneuse-prec" type="button" aria-label="Photo précédente">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <figure class="visionneuse-figure">
+      <img id="visionneuse-img" alt="">
+      <figcaption id="visionneuse-legende"></figcaption>
+    </figure>
+    <button class="visionneuse-bouton visionneuse-suiv" id="visionneuse-suiv" type="button" aria-label="Photo suivante">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+
+  <div class="sr" id="annonce" aria-live="polite"></div>
+  <noscript><p class="sans-js">Active JavaScript pour découvrir ce message ❤️</p></noscript>
+</body>
+</html>
