@@ -118,18 +118,20 @@ Une photo introuvable est simplement masquée.
 
 Le dossier `declaration-amour/` se suffit à lui-même.
 
-- **Netlify Drop**, le plus simple : glisse le dossier `declaration-amour`
-  sur <https://app.netlify.com/drop> ; un lien est créé aussitôt.
-- **Vercel** : *Add New → Project*, importe ce dépôt, règle *Root Directory*
-  sur `declaration-amour`, *Framework Preset* sur *Other*, sans commande de
-  build. (Le `vercel.json` de la racine concerne `ecole/` ; il est ignoré
-  quand *Root Directory* est défini.)
+- **Vercel** : *Add New → Project*, importe ce dépôt et règle seulement
+  *Root Directory* sur `declaration-amour`. Le fichier
+  `declaration-amour/vercel.json` s’occupe du reste : il copie le site dans
+  `public/` (script `preparer-vercel.js`), rend absolue l’adresse de l’image
+  d’aperçu pour que WhatsApp l’affiche, met les polices en cache et demande
+  aux moteurs de recherche de ne pas indexer la page. Le dossier doit être
+  présent sur la branche de production du dépôt. (Le `vercel.json` de la
+  racine concerne `ecole/` ; il est ignoré quand *Root Directory* est défini.)
+- **Netlify Drop** : glisse le dossier `declaration-amour` sur
+  <https://app.netlify.com/drop> ; un lien est créé aussitôt. Remplace alors
+  dans `index.html` la valeur `apercu.jpg` de la balise `og:image` par
+  l’adresse complète (`https://ton-site…/apercu.jpg`) pour que WhatsApp
+  affiche l’image d’aperçu.
 - N’importe quel hébergement de fichiers statiques convient.
-
-Une fois en ligne, remplace dans `index.html` la valeur `apercu.jpg` de la
-balise `og:image` par l’adresse complète (`https://ton-site…/apercu.jpg`) :
-WhatsApp affichera alors une jolie image quand tu partageras le lien, sans
-dévoiler la surprise.
 
 Pour essayer sur ton ordinateur, un double-clic sur `index.html` suffit. Pour
 tester les liens de l’atelier, sers le dossier : `npx serve declaration-amour`
@@ -172,6 +174,8 @@ declaration-amour/
   medias/              tes photos et ta musique
   apercu.jpg           image affichée quand le lien est partagé
   icone.png            icône sur l’écran d’accueil du téléphone
+  vercel.json          réglages Vercel (construction, cache, non-indexation)
+  preparer-vercel.js   construction sur Vercel : copie dans public/, image d’aperçu
 ```
 
 ## Vie privée
