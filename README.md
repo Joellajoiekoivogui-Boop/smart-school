@@ -361,6 +361,16 @@ Le dossier `ecole/` contient **N°1**, une plateforme de gestion scolaire
 Voir [`ecole/README.md`](ecole/README.md) pour la présentation, les comptes de
 démonstration et le lancement (`cd ecole && npm install && npm run dev`).
 
+## 💌 Déclaration d’amour animée (declaration-amour/)
+
+Le dossier `declaration-amour/` contient un petit site **statique** (HTML,
+CSS, JavaScript, sans installation) : une déclaration d’amour interactive et
+animée, pensée pour le téléphone — cœur qui bat, explosion de cœurs,
+« JE T’AIME », prénom écrit à la main, petits messages, enveloppe qui
+s’ouvre sur une lettre, photos et musique. Tout se personnalise dans
+`config.js` ou depuis l’atelier `personnaliser.html`, qui fabrique un lien à
+envoyer. Voir [`declaration-amour/README.md`](declaration-amour/README.md).
+
 ## Feuille de route
 
 - [x] Tableau de bord front-end (Next.js, `dashboard/`) au-dessus de l'API
